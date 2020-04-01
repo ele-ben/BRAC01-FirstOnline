@@ -86,7 +86,21 @@ for cuecolor in ["blue", "red", "black"]:
     for orientation in orientations:
         blackFrDf = draw(cuecolor, framecolor, orientation, blackFrDf)
 # add other variables relevant for Gorilla
-blackFrDf["display"] = "cocoa0"
+blackFrDf["display"] = "trial"
+blackFrDf["randomise_trials"] = 1
+blackFrDf["cue0FileName"] = blackFrDf["cueFileName"]
+#define cue0FileName column for cocoa = 300, when the cue-frame config is
+# black black before getting the colours
+blackFrDf1 = blackFrDf.copy()
+blackFrDf1["randomise_trials"] = 2
+for i in range(len(blackFrDf1)):
+    if blackFrDf1["orientation"].loc[i] == "horiz":
+        blackFrDf1["cue0FileName"].loc[i] = "blackblackhoriz.png"
+    elif blackFrDf1["orientation"].loc[i] == "vert":
+        blackFrDf1["cue0FileName"].loc[i] = "blackblackvert.png"
+
+blackFrDf = blackFrDf.append(blackFrDf1, ignore_index = True)
+
 # ....
 # save the df in a csv to be uploaded in Gorilla
 blackFrDf.to_csv(imgSheetName + ".csv", sep = ";")
