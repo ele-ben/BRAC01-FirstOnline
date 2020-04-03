@@ -3,29 +3,27 @@ import pandas as pd
 from PIL import Image, ImageDraw, ImageFont
 from win32api import GetSystemMetrics
 
-# PARAMETERS #
-myDir = "C:/Users/Elena/Documents/AA_PhD/Projects/BRAC01-FirstOnline/experiment/"
-# General
-w, h = 800, 600
-orientations = ["horiz", "vert"]
-# Frame
-x1, x2 = w/2 - 250, w/2 + 250
-y1, y2 =  h/2 - 250,  h/2 + 250
+def draw(cuecolor, framecolor, orientation, imgDf, training = ""):
+    # General
+    w, h = 800, 600
+    orientations = ["horiz", "vert"]
+    # Frame
+    x1, x2 = w/2 - 250, w/2 + 250
+    y1, y2 =  h/2 - 250,  h/2 + 250
 
-# Text
-(x, y) = w/2 - 13.8666666666, h*0.5 - 26.6666666667
-color = 'rgb(0, 0, 0)' # black color
+    # Text
+    (x, y) = w/2 - 13.8666666666, h*0.5 - 26.6666666667
+    color = 'rgb(0, 0, 0)' # black color
 
-# Stimuli
-stimuli = [1, 2, 3, 4, 6, 7, 8, 9]
+    # Stimuli
+    stimuli = [1, 2, 3, 4, 6, 7, 8, 9]
 
-# ( ͡❛ ͜ʖ ͡❛)
-# ( ͡❛ ͜ʖ ͡❛)
-# ( ͡❛ ͜ʖ ͡❛)
-# define a function that draws my experimental scree: an rectangle (the cue) either
-# vertical or horizontal and below, in the centre, a number (the stimulus)
-# Both are surronded by an empty square
-def draw(cuecolor, framecolor, orientation, imgDf):
+    # ( ͡❛ ͜ʖ ͡❛)
+    # ( ͡❛ ͜ʖ ͡❛)
+    # ( ͡❛ ͜ʖ ͡❛)
+    # define a function that draws my experimental scree: an rectangle (the cue) either
+    # vertical or horizontal and below, in the centre, a number (the stimulus)
+    # Both are surronded by an empty square
     # define name of the image file based on the parameters
     cueFileName = cuecolor + framecolor + orientation + ".png"
     # define position of the cue given the orientation
@@ -47,10 +45,10 @@ def draw(cuecolor, framecolor, orientation, imgDf):
     img1.rectangle(shape, fill ="#E0E0E0", outline =framecolor, width=2)
     img1.rectangle(shape2, fill=cuecolor, outline=cuecolor)
     # save the image, on purpose without number
-    img.save(myDir + "img/" + cueFileName)
+    img.save("img/" + cueFileName)
     # because of the experimental design, I don't want any number when both are
     # black
-    if cuecolor == "black" and framecolor == "black":
+    if cuecolor == "black" and framecolor == "black" and training == "":
         pass
     else:
     # Adding stimuli
@@ -63,7 +61,7 @@ def draw(cuecolor, framecolor, orientation, imgDf):
             img1.text((x, y), stimulus, fill=color, font=font, align="center")
             stimFileName = cuecolor + framecolor + orientation + stimulus + ".png"
             # save the image with each number
-            img.save(myDir + "img/" + stimFileName)
+            img.save("img/" + stimFileName)
             # save image info in a dictionary to append to a dataframe
             row = {"cuecolor": cuecolor, "framecolor": framecolor, "orientation": orientation,
                 "stimulus": stimulus, "cueFileName": cueFileName, "stimFileName": stimFileName
@@ -74,72 +72,77 @@ def draw(cuecolor, framecolor, orientation, imgDf):
 
 # run the function in a loop to generate all the requred colours and numbers
 # generate the images and save the df with the details in a csv
+def drawStimuli(BRAC):
+    if BRAC == 1:
+        colNames = ["cuecolor", "framecolor", "orientation", "stimulus", "cueFileName",
+            "stimFileName"]
+        # prepare empty df
+        blackFrDf = pd.DataFrame([], columns = colNames)
+        # first BRAC01 file, where the frame stays black and the cue varies
+        imgSheetName = "blackFrame"
+        # run the function for all the possible combinations of BRAC01
+        for cuecolor in ["blue", "red", "black"]:
+            framecolor = "black"
+            for orientation in ["horiz", "vert"]:
+                blackFrDf = draw(cuecolor, framecolor, orientation, blackFrDf)
+        # add other variables relevant for Gorilla
+        blackFrDf["display"] = "trial"
+        blackFrDf["randomise_trials"] = 1
+        blackFrDf["cue0FileName"] = blackFrDf["cueFileName"]
+        #define cue0FileName column for cocoa = 300, when the cue-frame config is
+        # black black before getting the colours
+        blackFrDf1 = blackFrDf.copy()
+        blackFrDf1["randomise_trials"] = 2
+        for i in range(len(blackFrDf1)):
+            if blackFrDf1["orientation"].loc[i] == "horiz":
+                blackFrDf1["cue0FileName"].loc[i] = "blackblackhoriz.png"
+            elif blackFrDf1["orientation"].loc[i] == "vert":
+                blackFrDf1["cue0FileName"].loc[i] = "blackblackvert.png"
+
+        blackFrDf = blackFrDf.append(blackFrDf1, ignore_index = True)
+
+        # ....
+        # save the df in a csv to be uploaded in Gorilla
+        blackFrDf.to_csv(imgSheetName + ".csv", sep = ";")
+    elif BRAC == 2:
+        # second BRAC02 file, where the cue stays black and the frame varies
+        blackCuDf = pd.DataFrame([], columns = colNames)
+        # declare the name of the csv
+        imgSheetName = "blackCue"
+        for framecolor in ["blue", "red"]: # I don't need the black here
+            cuecolor = "black"
+            for orientation in ["horiz", "vert"]:
+                blackCuDf = draw(cuecolor, framecolor, orientation, blackCuDf)
+        # add other variables relevant for Gorilla
+        # ....
+        # save the df in a csv to be uploaded in Gorilla
+        blackCuDf.to_csv(imgSheetName + ".csv", sep = ";")
+    else:
+        print("function input must be either integer 1 or int 2")
+
+
+# defining training trials
+taskLst = ["horiz", "vert"]
+stimuli = [s for s in range(1,10) if s !=5]
+# cartesian product of the above-listed variables
+training = pd.DataFrame([(x,y) for x in taskLst for y in stimuli], columns=['task', 'stim'])
+training.reset_index(inplace = True, drop= True)
+
 colNames = ["cuecolor", "framecolor", "orientation", "stimulus", "cueFileName",
     "stimFileName"]
 # prepare empty df
-blackFrDf = pd.DataFrame([], columns = colNames)
-# first BRAC01 file, where the frame stays black and the cue varies
-imgSheetName = "blackFrame"
-# run the function for all the possible combinations of BRAC01
-for cuecolor in ["blue", "red", "black"]:
-    framecolor = "black"
-    for orientation in orientations:
-        blackFrDf = draw(cuecolor, framecolor, orientation, blackFrDf)
-# add other variables relevant for Gorilla
-blackFrDf["display"] = "trial"
-blackFrDf["randomise_trials"] = 1
-blackFrDf["cue0FileName"] = blackFrDf["cueFileName"]
-#define cue0FileName column for cocoa = 300, when the cue-frame config is
-# black black before getting the colours
-blackFrDf1 = blackFrDf.copy()
-blackFrDf1["randomise_trials"] = 2
-for i in range(len(blackFrDf1)):
-    if blackFrDf1["orientation"].loc[i] == "horiz":
-        blackFrDf1["cue0FileName"].loc[i] = "blackblackhoriz.png"
-    elif blackFrDf1["orientation"].loc[i] == "vert":
-        blackFrDf1["cue0FileName"].loc[i] = "blackblackvert.png"
+trainDf = pd.DataFrame([], columns = colNames)
+for orientation in ["horiz", "vert"]:
+    trainDf = draw("black", "black", orientation, trainDf, training = 1)
+# use self-made no_stimRepetition function to avoid n-1 repetitions of stimuli
+#training.merge(trainDf, on = ["orientation", "stimuli"])
+training_stimuli = no_StimRepetition(len(training), stimuli)
+trainingShuf = shuffle_rows(training_stimuli, training, "stim")
+# define ANSWER colum for Gorilla to give feedback
+tSeq["ANSWER"] = 0
 
-blackFrDf = blackFrDf.append(blackFrDf1, ignore_index = True)
+# Setting correct respnse, based on criteria
+# Iterating over possible criteria combinations
 
-# ....
-# save the df in a csv to be uploaded in Gorilla
-blackFrDf.to_csv(imgSheetName + ".csv", sep = ";")
-
-# second BRAC02 file, where the cue stays black and the frame varies
-blackCuDf = pd.DataFrame([], columns = colNames)
-# declare the name of the csv
-imgSheetName = "blackCue"
-for framecolor in ["blue", "red"]: # I don't need the black here
-    cuecolor = "black"
-    for orientation in orientations:
-        blackCuDf = draw(cuecolor, framecolor, orientation, blackCuDf)
-# add other variables relevant for Gorilla
-# ....
-# save the df in a csv to be uploaded in Gorilla
-blackCuDf.to_csv(imgSheetName + ".csv", sep = ";")
-
-# create the 8 different instructions spreadsheets
-# define the strings composing each instruction
-magn =  "greater or less than 5."
-par = "odd or even."
-horiMap = "When the rectangle is horizontal, your task is to tell whether the number is "
-verMap = "When the rectangle is vertical, your task is to tell whether the number is "
-greatM = "greater than 5."
-lessM = "less than 5."
-oddM = "odd."
-evenM = "even."
-A = "Press A to indicate "
-L = "Press L to indicate "
-
-tasks = [[magn, par], [par, magn]]
-keys = [[A, L], [L, A]]
-keys1 = [[A, L], [L, A]]
-for task in tasks:
-    for key in keys:
-        for key1 in keys1:
-            instr = pd.DataFrame([], columns = ["display", "horiMap", "verMap", "greatMap", "lessMap", "oddMap", "evenMap"])
-            row = {"display": "Instructions", "horiMap": horiMap + task[0],
-                "verMap": verMap + task[1], "greatMap": key[0] + greatM, "lessMap": key[1]+ lessM, "oddMap": key1[0] + oddM, "evenMap": key1[1] + evenM}
-            instr = instr.append(row, ignore_index = True)
-            instFile = task[0][:3] + key[0][6:7] + key1[0][6:7]
-            instr.to_csv("spreadsheets/"+ instFile + ".csv", sep = ";", index= False)
+tSeq.loc[(tSeq["task"] == "magnity") & (tSeq["stim"] > 5), "resp"] = 1
+tSeq.loc[(tSeq["task"] == "parity") & (tSeq["stim"] % 2 == 0), "resp"] = 1
