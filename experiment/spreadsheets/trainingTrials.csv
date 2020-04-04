@@ -1,0 +1,17 @@
+;cuecolor;framecolor;orientation;stimulus;cueFileName;stimFileName;display
+0;black;black;horiz;9;blackblackhoriz.png;blackblackhoriz9.png;training
+1;black;black;vert;4;blackblackvert.png;blackblackvert4.png;training
+2;black;black;horiz;6;blackblackhoriz.png;blackblackhoriz6.png;training
+3;black;black;horiz;8;blackblackhoriz.png;blackblackhoriz8.png;training
+4;black;black;vert;6;blackblackvert.png;blackblackvert6.png;training
+5;black;black;vert;8;blackblackvert.png;blackblackvert8.png;training
+6;black;black;horiz;1;blackblackhoriz.png;blackblackhoriz1.png;training
+7;black;black;horiz;7;blackblackhoriz.png;blackblackhoriz7.png;training
+8;black;black;vert;1;blackblackvert.png;blackblackvert1.png;training
+9;black;black;horiz;2;blackblackhoriz.png;blackblackhoriz2.png;training
+10;black;black;vert;9;blackblackvert.png;blackblackvert9.png;training
+11;black;black;horiz;3;blackblackhoriz.png;blackblackhoriz3.png;training
+12;black;black;horiz;4;blackblackhoriz.png;blackblackhoriz4.png;training
+13;black;black;vert;3;blackblackvert.png;blackblackvert3.png;training
+14;black;black;vert;7;blackblackvert.png;blackblackvert7.png;training
+15;black;black;vert;2;blackblackvert.png;blackblackvert2.png;training

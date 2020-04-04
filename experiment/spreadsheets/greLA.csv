@@ -1,0 +1,2 @@
+display;horiMap;verMap;greatMap;lessMap;oddMap;evenMap
+Instructions;When the rectangle is horizontal, your task is to tell whether the number is greater or less than 5.;When the rectangle is vertical, your task is to tell whether the number is odd or even.;Press L to indicate greater than 5.;Press A to indicate less than 5.;Press A to indicate odd.;Press L to indicate even.

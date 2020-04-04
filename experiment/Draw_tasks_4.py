@@ -2,6 +2,7 @@ import math, csv
 import pandas as pd
 from PIL import Image, ImageDraw, ImageFont
 from win32api import GetSystemMetrics
+from BRACfun import no_StimRepetition, shuffle_rows
 
 def draw(cuecolor, framecolor, orientation, imgDf, training = ""):
     # General
@@ -64,7 +65,7 @@ def draw(cuecolor, framecolor, orientation, imgDf, training = ""):
             img.save("img/" + stimFileName)
             # save image info in a dictionary to append to a dataframe
             row = {"cuecolor": cuecolor, "framecolor": framecolor, "orientation": orientation,
-                "stimulus": stimulus, "cueFileName": cueFileName, "stimFileName": stimFileName
+                "stimulus": int(stimulus), "cueFileName": cueFileName, "stimFileName": stimFileName
             }
             # append the dictionary
             imgDf = imgDf.append(row, ignore_index = True)
@@ -103,7 +104,7 @@ def drawStimuli(BRAC):
 
         # ....
         # save the df in a csv to be uploaded in Gorilla
-        blackFrDf.to_csv(imgSheetName + ".csv", sep = ";")
+        blackFrDf.to_csv("spreadsheets/"+imgSheetName + ".csv", sep = ";")
     elif BRAC == 2:
         # second BRAC02 file, where the cue stays black and the frame varies
         blackCuDf = pd.DataFrame([], columns = colNames)
@@ -116,33 +117,24 @@ def drawStimuli(BRAC):
         # add other variables relevant for Gorilla
         # ....
         # save the df in a csv to be uploaded in Gorilla
-        blackCuDf.to_csv(imgSheetName + ".csv", sep = ";")
+        blackCuDf.to_csv("spreadsheets/"+imgSheetName + ".csv", sep = ";")
     else:
         print("function input must be either integer 1 or int 2")
 
 
 # defining training trials
-taskLst = ["horiz", "vert"]
-stimuli = [s for s in range(1,10) if s !=5]
-# cartesian product of the above-listed variables
-training = pd.DataFrame([(x,y) for x in taskLst for y in stimuli], columns=['task', 'stim'])
-training.reset_index(inplace = True, drop= True)
-
+# prepare empty df
 colNames = ["cuecolor", "framecolor", "orientation", "stimulus", "cueFileName",
     "stimFileName"]
-# prepare empty df
 trainDf = pd.DataFrame([], columns = colNames)
 for orientation in ["horiz", "vert"]:
     trainDf = draw("black", "black", orientation, trainDf, training = 1)
 # use self-made no_stimRepetition function to avoid n-1 repetitions of stimuli
 #training.merge(trainDf, on = ["orientation", "stimuli"])
-training_stimuli = no_StimRepetition(len(training), stimuli)
-trainingShuf = shuffle_rows(training_stimuli, training, "stim")
+stimuli = [1,2,3,4,6,7,8,9]
+training_stimuli = no_StimRepetition(len(trainDf), stimuli)
+trainingShuf = shuffle_rows(training_stimuli, trainDf, "stimulus")
+trainingShuf["display"] = "training"
+trainingShuf.to_csv("spreadsheets/"+"trainingTrials" + ".csv", sep = ";")
+
 # define ANSWER colum for Gorilla to give feedback
-tSeq["ANSWER"] = 0
-
-# Setting correct respnse, based on criteria
-# Iterating over possible criteria combinations
-
-tSeq.loc[(tSeq["task"] == "magnity") & (tSeq["stim"] > 5), "resp"] = 1
-tSeq.loc[(tSeq["task"] == "parity") & (tSeq["stim"] % 2 == 0), "resp"] = 1
