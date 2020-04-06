@@ -124,17 +124,59 @@ def drawStimuli(BRAC):
 
 # defining training trials
 # prepare empty df
-colNames = ["cuecolor", "framecolor", "orientation", "stimulus", "cueFileName",
-    "stimFileName"]
-trainDf = pd.DataFrame([], columns = colNames)
-for orientation in ["horiz", "vert"]:
-    trainDf = draw("black", "black", orientation, trainDf, training = 1)
-# use self-made no_stimRepetition function to avoid n-1 repetitions of stimuli
-#training.merge(trainDf, on = ["orientation", "stimuli"])
-stimuli = [1,2,3,4,6,7,8,9]
-training_stimuli = no_StimRepetition(len(trainDf), stimuli)
-trainingShuf = shuffle_rows(training_stimuli, trainDf, "stimulus")
-trainingShuf["display"] = "training"
-trainingShuf.to_csv("spreadsheets/"+"trainingTrials" + ".csv", sep = ";")
+def trainingTrials():
+    colNames = ["cuecolor", "framecolor", "orientation", "stimulus", "cueFileName",
+        "stimFileName", "task", "ANSWER"]
+    trainDf = pd.DataFrame([], columns = colNames)
+    for orientation in ["horiz", "vert"]:
+        trainDf = draw("black", "black", orientation, trainDf, training = 1)
+    # use self-made no_stimRepetition function to avoid n-1 repetitions of stimuli
+    #training.merge(trainDf, on = ["orientation", "stimuli"])
+    stimuli = [1,2,3,4,6,7,8,9]
+    training_stimuli = no_StimRepetition(len(trainDf), stimuli)
+    trainingShuf = shuffle_rows(training_stimuli, trainDf, "stimulus")
+    trainingShuf["display"] = "training"
+    return trainingShuf
+#trainingShuf.to_csv("spreadsheets/"+"trainingTrials" + ".csv", sep = ";")
 
 # define ANSWER colum for Gorilla to give feedback
+# create the 8 different instructions spreadsheets
+def instr_training():
+    # define the strings composing each instruction
+    magn =  "greater or less than 5."
+    par = "odd or even."
+    horiMap = "When the rectangle is horizontal, your task is to tell whether the number is "
+    verMap = "When the rectangle is vertical, your task is to tell whether the number is "
+    greatM = "greater than 5."
+    lessM = "less than 5."
+    oddM = "odd."
+    evenM = "even."
+    A = "Press A to indicate "
+    L = "Press L to indicate "
+
+    tasks = [[magn, par], [par, magn]]
+    keys = [[A, L], [L, A]]
+    keys1 = [[A, L], [L, A]]
+    for task in tasks:
+        for key in keys:
+            for key1 in keys1:
+                instr = pd.DataFrame([], columns = ["display", "horiMap", "verMap", "greatMap", "lessMap", "oddMap", "evenMap"])
+                row = {"display": "Instructions", "horiMap": horiMap + task[0],
+                    "verMap": verMap + task[1], "greatMap": key[0] + greatM, "lessMap": key[1]+ lessM, "oddMap": key1[0] + oddM, "evenMap": key1[1] + evenM}
+                instr = instr.append(row, ignore_index = True)
+                instFile = task[0][:3] + key[0][6:7] + key1[0][6:7]
+                trainingShuf = trainingTrials()
+                trainingShuf.loc[trainingShuf["orientation"] == "horiz", "task"] = task[0][:3]
+                trainingShuf.loc[trainingShuf["orientation"] == "vert", "task"] = task[1][:3]
+                trainingShuf.loc[trainingShuf["task"] == "gre", "task"] = "magnit"
+                trainingShuf.loc[trainingShuf["task"] == "odd", "task"] = "parity"
+                oddKey = key1[0][6:7]
+                evenKey = key1[1][6:7]
+                greatKey = key[0][6:7]
+                lessKey = key[1][6:7]
+                trainingShuf.loc[(trainingShuf["task"] == "magnit") & (trainingShuf["stimulus"] > 5), "ANSWER"] = greatKey
+                trainingShuf.loc[(trainingShuf["task"] == "magnit") & (trainingShuf["stimulus"] < 5), "ANSWER"] = lessKey
+                trainingShuf.loc[(trainingShuf["task"] == "parity") & (trainingShuf["stimulus"] % 2 == 0), "ANSWER"] = evenKey
+                trainingShuf.loc[(trainingShuf["task"] == "parity") & (trainingShuf["stimulus"] % 2 != 0), "ANSWER"] = oddKey
+                instrPlusTraining = pd.concat([instr, trainingShuf], ignore_index=True, sort=False)
+                instrPlusTraining.to_csv("spreadsheets/"+ instFile + ".csv", sep = ";", index= False)
