@@ -2,7 +2,12 @@ import math, csv
 import pandas as pd
 from PIL import Image, ImageDraw, ImageFont
 from win32api import GetSystemMetrics
-from BRACfun import no_StimRepetition, shuffle_rows
+import sys
+sys.path.append(r'C:\Users\Elena\Documents\AA_PhD\PsychoPy\MyFunctions')
+#from BRACfun import no_StimRepetition, shuffle_rows
+from funx_10 import shuffle_rows, noStimRepetition, DfBooleanOrder
+from funx_10 import orderStimWithinTasks_str as pseudorandomize
+
 
 def draw(cuecolor, framecolor, orientation, imgDf, training = ""):
     myDir = "C:/Users/Elena/Documents/AA_PhD/Projects/BRAC01-FirstOnline/experiment/"
@@ -70,37 +75,39 @@ def draw(cuecolor, framecolor, orientation, imgDf, training = ""):
 # run the function in a loop to generate all the requred colours and numbers
 # generate the images and save the df with the details in a csv
 def drawStimuli(BRAC):
-    if BRAC == 1:
+    if BRAC == "BRAC1":
         colNames = ["cuecolor", "framecolor", "orientation", "stimulus", "cueFileName",
             "stimFileName"]
         # prepare empty df
         blackFrDf = pd.DataFrame([], columns = colNames)
         # first BRAC01 file, where the frame stays black and the cue varies
-        imgSheetName = "blackFrame"
+        #imgSheetName = "blackFrame"
         # run the function for all the possible combinations of BRAC01
         for cuecolor in ["blue", "red", "black"]:
             framecolor = "black"
             for orientation in ["hori", "vert"]:
                 blackFrDf = draw(cuecolor, framecolor, orientation, blackFrDf)
-        # add other variables relevant for Gorilla
+        # add other experimental or Gorilla variables
         blackFrDf["display"] = "trial"
-        blackFrDf["randomise_trials"] = 1
+        blackFrDf["cocoa"] = 0
         blackFrDf["cue0FileName"] = blackFrDf["cueFileName"]
         #define cue0FileName column for cocoa = 300, when the cue-frame config is
         # black black before getting the colours
-        blackFrDf1 = blackFrDf.copy()
-        blackFrDf1["randomise_trials"] = 2
-        for i in range(len(blackFrDf1)):
-            if blackFrDf1["orientation"].loc[i] == "hori":
-                blackFrDf1["cue0FileName"].loc[i] = "blackblackhori.png"
-            elif blackFrDf1["orientation"].loc[i] == "vert":
-                blackFrDf1["cue0FileName"].loc[i] = "blackblackvert.png"
-
-        blackFrDf = blackFrDf.append(blackFrDf1, ignore_index = True)
+        blackFrDf300 = blackFrDf.copy()
+        blackFrDf300["cocoa"] = 300
+        for i in range(len(blackFrDf300)):
+            if blackFrDf300["orientation"].iloc[i] == "hori":
+                blackFrDf300["cue0FileName"].iloc[i] = "blackblackhori.png"
+            elif blackFrDf300["orientation"].iloc[i] == "vert":
+                blackFrDf300["cue0FileName"].iloc[i] = "blackblackvert.png"
+        #append
+        #blackFrDf = blackFrDf.append(blackFrDf300, ignore_index = True)
         # ....
-        # save the df in a csv to be uploaded in Gorilla
-        blackFrDf.to_csv("spreadsheets/"+imgSheetName + ".csv", sep = ";")
-    elif BRAC == 2:
+        # return the 2 dataframes with the possible stimuli rows
+        #blackFrDf.to_csv("spreadsheets/"+imgSheetName + ".csv", sep = ";")
+        return [blackFrDf, blackFrDf300]
+    ####################################### FIX BRAC 2!!!!!!!!!!!!
+    elif BRAC == "BRAC2":
         # second BRAC02 file, where the cue stays black and the frame varies
         blackCuDf = pd.DataFrame([], columns = colNames)
         # declare the name of the csv
@@ -114,7 +121,7 @@ def drawStimuli(BRAC):
         # save the df in a csv to be uploaded in Gorilla
         blackCuDf.to_csv("spreadsheets/"+imgSheetName + ".csv", sep = ";")
     else:
-        print("function input must be either integer 1 or int 2")
+        print("function input must be either string BRAC1 or BRAC2")
 
 ## - Defining training trials
 def trainingTrials():
@@ -195,3 +202,33 @@ def instr_training():
                 instrPlusTraining = instrPlusTraining.append(startDisplay, ignore_index = True)
                 # export the spreadsheets
                 instrPlusTraining.to_csv("spreadsheets/"+ instFile + ".csv", sep = ";", index= False)
+
+# build blocks, pseudorandomize them and paste them together
+def buildAndPasteBlocks(df0, df300, startCocoa):
+    # We want 3 exemplars for each kind of trial
+    trialsPercondition = 3
+    block0 = pd.concat([df0]*trialsPercondition, ignore_index = True)
+    block300 = pd.concat([df300]*trialsPercondition, ignore_index = True)
+    # define whether they have blocks 2,4,6,8 with cocoa = 0 and 1,3,5,7 with
+    # cocoa 300 or viceersa
+    if startCocoa == 0:
+        blocks = [block0, block300]*4
+    elif startCocoa == 300:
+        blocks = [block300, block0]*4
+    else:
+        print("startCocoa must be either int 0 or 300")
+    experiment = pd.DataFrame([], columns = block0.columns)
+    for block in blocks:
+        stimElmns = list(set(block.stimulus))
+        cues = list(set(block.orientation))
+        #help(pseudorandomize)
+        Stim_Cues = pseudorandomize(len(block), stimElmns, 1, *cues)
+        #help(DfBooleanOrder)
+        block_shuf = DfBooleanOrder(
+            block, "stimulus", Stim_Cues.stim, "orientation", Stim_Cues.task
+        )
+        # append a interblock-break screen
+        breakScreen = {"display": "break"}
+        block_shuf = block_shuf.append(breakScreen, ignore_index=True)
+        experiment = experiment.append(block_shuf)
+    return experiment
