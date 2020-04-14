@@ -5,30 +5,27 @@ from win32api import GetSystemMetrics
 from BRACfun import no_StimRepetition, shuffle_rows
 
 def draw(cuecolor, framecolor, orientation, imgDf, training = ""):
+    myDir = "C:/Users/Elena/Documents/AA_PhD/Projects/BRAC01-FirstOnline/experiment/"
+    imgDir = "img/"
+    background = (255,255,255)
     # General
     w, h = 800, 600
-    orientations = ["horiz", "vert"]
+    orientations = ["hori", "vert"]
     # Frame
     x1, x2 = w/2 - 250, w/2 + 250
     y1, y2 =  h/2 - 250,  h/2 + 250
-
     # Text
     (x, y) = w/2 - 13.8666666666, h*0.5 - 26.6666666667
     color = 'rgb(0, 0, 0)' # black color
-
     # Stimuli
     stimuli = [1, 2, 3, 4, 6, 7, 8, 9]
-
-    # ( ͡❛ ͜ʖ ͡❛)
-    # ( ͡❛ ͜ʖ ͡❛)
-    # ( ͡❛ ͜ʖ ͡❛)
     # define a function that draws my experimental scree: an rectangle (the cue) either
     # vertical or horizontal and below, in the centre, a number (the stimulus)
     # Both are surronded by an empty square
     # define name of the image file based on the parameters
     cueFileName = cuecolor + framecolor + orientation + ".png"
     # define position of the cue given the orientation
-    if orientation=="horiz":
+    if orientation=="hori":
         x3, x4 = w/2 - 50, w/2 + 50
         y3, y4 = ((y1 + y2)/2 + y1)/2 - 20, ((y1 + y2)/2 + y1)/2 + 20
     if orientation=="vert":
@@ -37,16 +34,15 @@ def draw(cuecolor, framecolor, orientation, imgDf, training = ""):
     # save coordinates of the cue and of the frame
     shape = [(x1, y1), (x2,y2)]
     shape2 = [(x3, y3), (x4, y4)]
-
-    # creating new Image object - grey background
-    img = Image.new("RGB", (w, h), color=(224, 224, 224))
+    # creating new Image object - white background
+    img = Image.new("RGB", (w, h), color=background)
     # draw the cue and the frame
     img1 = ImageDraw.Draw(img)
     font = ImageFont.truetype('arial.ttf', size=40)
-    img1.rectangle(shape, fill ="#E0E0E0", outline =framecolor, width=2)
-    img1.rectangle(shape2, fill=cuecolor, outline=cuecolor)
+    img1.rectangle(shape, fill = background, outline =framecolor, width=2)
+    img1.rectangle(shape2, fill= cuecolor, outline=cuecolor)
     # save the image, on purpose without number
-    img.save("img/" + cueFileName)
+    img.save(myDir + imgDir + cueFileName)
     # because of the experimental design, I don't want any number when both are
     # black
     if cuecolor == "black" and framecolor == "black" and training == "":
@@ -57,12 +53,12 @@ def draw(cuecolor, framecolor, orientation, imgDf, training = ""):
             stimulus = str(num)
             img1 = ImageDraw.Draw(img)
             font = ImageFont.truetype('arial.ttf', size=40)
-            img1.rectangle(shape, fill ="#E0E0E0", outline =framecolor, width=2)
+            img1.rectangle(shape, fill =background, outline =framecolor, width=2)
             img1.rectangle(shape2, fill=cuecolor, outline=cuecolor)
             img1.text((x, y), stimulus, fill=color, font=font, align="center")
             stimFileName = cuecolor + framecolor + orientation + stimulus + ".png"
             # save the image with each number
-            img.save("img/" + stimFileName)
+            img.save(myDir + imgDir + stimFileName)
             # save image info in a dictionary to append to a dataframe
             row = {"cuecolor": cuecolor, "framecolor": framecolor, "orientation": orientation,
                 "stimulus": int(stimulus), "cueFileName": cueFileName, "stimFileName": stimFileName
@@ -84,7 +80,7 @@ def drawStimuli(BRAC):
         # run the function for all the possible combinations of BRAC01
         for cuecolor in ["blue", "red", "black"]:
             framecolor = "black"
-            for orientation in ["horiz", "vert"]:
+            for orientation in ["hori", "vert"]:
                 blackFrDf = draw(cuecolor, framecolor, orientation, blackFrDf)
         # add other variables relevant for Gorilla
         blackFrDf["display"] = "trial"
@@ -95,13 +91,12 @@ def drawStimuli(BRAC):
         blackFrDf1 = blackFrDf.copy()
         blackFrDf1["randomise_trials"] = 2
         for i in range(len(blackFrDf1)):
-            if blackFrDf1["orientation"].loc[i] == "horiz":
-                blackFrDf1["cue0FileName"].loc[i] = "blackblackhoriz.png"
+            if blackFrDf1["orientation"].loc[i] == "hori":
+                blackFrDf1["cue0FileName"].loc[i] = "blackblackhori.png"
             elif blackFrDf1["orientation"].loc[i] == "vert":
                 blackFrDf1["cue0FileName"].loc[i] = "blackblackvert.png"
 
         blackFrDf = blackFrDf.append(blackFrDf1, ignore_index = True)
-
         # ....
         # save the df in a csv to be uploaded in Gorilla
         blackFrDf.to_csv("spreadsheets/"+imgSheetName + ".csv", sep = ";")
@@ -112,7 +107,7 @@ def drawStimuli(BRAC):
         imgSheetName = "blackCue"
         for framecolor in ["blue", "red"]: # I don't need the black here
             cuecolor = "black"
-            for orientation in ["horiz", "vert"]:
+            for orientation in ["hori", "vert"]:
                 blackCuDf = draw(cuecolor, framecolor, orientation, blackCuDf)
         # add other variables relevant for Gorilla
         # ....
@@ -121,14 +116,13 @@ def drawStimuli(BRAC):
     else:
         print("function input must be either integer 1 or int 2")
 
-
-# defining training trials
-# prepare empty df
+## - Defining training trials
 def trainingTrials():
+    # prepare empty df
     colNames = ["cuecolor", "framecolor", "orientation", "stimulus", "cueFileName",
         "stimFileName", "task", "ANSWER"]
     trainDf = pd.DataFrame([], columns = colNames)
-    for orientation in ["horiz", "vert"]:
+    for orientation in ["hori", "vert"]:
         trainDf = draw("black", "black", orientation, trainDf, training = 1)
     # use self-made no_stimRepetition function to avoid n-1 repetitions of stimuli
     #training.merge(trainDf, on = ["orientation", "stimuli"])
@@ -137,39 +131,55 @@ def trainingTrials():
     trainingShuf = shuffle_rows(training_stimuli, trainDf, "stimulus")
     trainingShuf["display"] = "training"
     return trainingShuf
-#trainingShuf.to_csv("spreadsheets/"+"trainingTrials" + ".csv", sep = ";")
+    #trainingShuf.to_csv("spreadsheets/"+"trainingTrials" + ".csv", sep = ";")
 
-# define ANSWER colum for Gorilla to give feedback
-# create the 8 different instructions spreadsheets
+##- Define the spreadsheets driving instructions presentations and trainingShuf
+# create the 8 different instructions + training spreadsheets
 def instr_training():
-    # define the strings composing each instruction
+#INSTRUCTIONS
+# define the strings composing each instruction
     magn =  "greater or less than 5."
     par = "odd or even."
-    horiMap = "When the rectangle is horizontal, your task is to tell whether the number is "
-    verMap = "When the rectangle is vertical, your task is to tell whether the number is "
+    hori = "When the rectangle is horizontal, your task is to tell whether the number is "
+    vert = "When the rectangle is vertical, your task is to tell whether the number is "
     greatM = "greater than 5."
     lessM = "less than 5."
     oddM = "odd."
     evenM = "even."
     A = "Press A to indicate "
     L = "Press L to indicate "
-
-    tasks = [[magn, par], [par, magn]]
+    # compose sentences in loop to get the possible mappings
+    # define lists to loop in
+    figures = [[hori, vert], [vert, hori]]
+    fig_dict = {hori[22:26]: "blackblackhori.png", vert[22:26]: "blackblackvert.png"}
     keys = [[A, L], [L, A]]
     keys1 = [[A, L], [L, A]]
-    for task in tasks:
+    fig = figures[0]
+    for fig in figures:
         for key in keys:
             for key1 in keys1:
-                instr = pd.DataFrame([], columns = ["display", "horiMap", "verMap", "greatMap", "lessMap", "oddMap", "evenMap"])
-                row = {"display": "Instructions", "horiMap": horiMap + task[0],
-                    "verMap": verMap + task[1], "greatMap": key[0] + greatM, "lessMap": key[1]+ lessM, "oddMap": key1[0] + oddM, "evenMap": key1[1] + evenM}
+                # prepare the dataframe to host instructions info
+                instr = pd.DataFrame([], columns = ["display", "magnMap",
+                "parMap", "greatMap", "lessMap", "oddMap", "evenMap", "firstFig",
+                 "secondFig"])
+                # build the instructions row with the possible combinations
+                row = {"display": "Instructions", "magnMap": fig[0] + magn,
+                    "parMap": fig[1] + par, "greatMap": key[0] + greatM,
+                    "lessMap": key[1]+ lessM, "oddMap": key1[0] + oddM,
+                    "evenMap": key1[1] + evenM, "firstFig": fig_dict[fig[0][22:26]],
+                    "secondFig": fig_dict[fig[1][22:26]]}
                 instr = instr.append(row, ignore_index = True)
-                instFile = task[0][:3] + key[0][6:7] + key1[0][6:7]
+                # create a self-speaking name: orientation of cue for magnitude
+                # key for great and key for odd
+                instFile = fig[0][22:26] + key[0][6:7] + key1[0][6:7]
+                # TRAINING TRIALS
+                # generate the sequence of trials
                 trainingShuf = trainingTrials()
-                trainingShuf.loc[trainingShuf["orientation"] == "horiz", "task"] = task[0][:3]
-                trainingShuf.loc[trainingShuf["orientation"] == "vert", "task"] = task[1][:3]
-                trainingShuf.loc[trainingShuf["task"] == "gre", "task"] = "magnit"
-                trainingShuf.loc[trainingShuf["task"] == "odd", "task"] = "parity"
+                # assign the actual task to each row, given the cue
+                trainingShuf.loc[trainingShuf["orientation"] == fig_dict[fig[0][22:26]], "task"] = "magnit"
+                trainingShuf.loc[trainingShuf["orientation"] == fig_dict[fig[1][22:26]], "task"] = "parity"
+                # fill in answer column for Gorilla to give feedvback
+                # extract the correct key from the mapping of the current loop
                 oddKey = key1[0][6:7]
                 evenKey = key1[1][6:7]
                 greatKey = key[0][6:7]
@@ -178,5 +188,10 @@ def instr_training():
                 trainingShuf.loc[(trainingShuf["task"] == "magnit") & (trainingShuf["stimulus"] < 5), "ANSWER"] = lessKey
                 trainingShuf.loc[(trainingShuf["task"] == "parity") & (trainingShuf["stimulus"] % 2 == 0), "ANSWER"] = evenKey
                 trainingShuf.loc[(trainingShuf["task"] == "parity") & (trainingShuf["stimulus"] % 2 != 0), "ANSWER"] = oddKey
+                #paste the training trials below the instructions row
                 instrPlusTraining = pd.concat([instr, trainingShuf], ignore_index=True, sort=False)
+                # add another row for the last display before the experiment starts
+                startDisplay = {"display": "start", "InstrRow": "-" + str(len(instrPlusTraining))}
+                instrPlusTraining = instrPlusTraining.append(startDisplay, ignore_index = True)
+                # export the spreadsheets
                 instrPlusTraining.to_csv("spreadsheets/"+ instFile + ".csv", sep = ";", index= False)
