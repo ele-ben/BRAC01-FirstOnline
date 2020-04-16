@@ -10,12 +10,12 @@ from Draw_tasks_4 import draw, drawStimuli, trainingTrials, instr_training, buil
 # project folders
 sheetDir = "spreadsheets/"
 
-## Instructions + training Trials
+#-------- Instructions + training Trials
 
 # Create 8 spreadsheets and save them in spreadsheets folder
 instr_training()
 
-## Stimuli and experimental trials
+#-------- Stimuli and experimental trials
 
 # Draw the stimuli and save them in img folder
 # Crate dataframes with all possible kind of trials

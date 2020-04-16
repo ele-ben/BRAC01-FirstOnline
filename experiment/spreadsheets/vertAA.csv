@@ -1,0 +1,19 @@
+display;magnMap;parMap;greatMap;lessMap;oddMap;evenMap;firstFig;secondFig;cuecolor;framecolor;orientation;stimulus;cueFileName;stimFileName;task;ANSWER;InstrRow
+Instructions;## When the rectangle is vertical, your task is to tell whether the number is greater or less than 5.;## When the rectangle is horizontal, your task is to tell whether the number is odd or even.;## Press A to indicate greater than 5.;## Press L to indicate less than 5.;## Press A to indicate odd.;## Press L to indicate even.;blackblackvert.png;blackblackhori.png;;;;;;;;;
+training;;;;;;;;;black;black;hori;9;blackblackhori.png;blackblackhori9.png;parity;A;
+training;;;;;;;;;black;black;hori;6;blackblackhori.png;blackblackhori6.png;parity;L;
+training;;;;;;;;;black;black;hori;1;blackblackhori.png;blackblackhori1.png;parity;A;
+training;;;;;;;;;black;black;vert;2;blackblackvert.png;blackblackvert2.png;magnit;L;
+training;;;;;;;;;black;black;vert;3;blackblackvert.png;blackblackvert3.png;magnit;L;
+training;;;;;;;;;black;black;hori;8;blackblackhori.png;blackblackhori8.png;parity;L;
+training;;;;;;;;;black;black;hori;2;blackblackhori.png;blackblackhori2.png;parity;L;
+training;;;;;;;;;black;black;vert;8;blackblackvert.png;blackblackvert8.png;magnit;A;
+training;;;;;;;;;black;black;hori;7;blackblackhori.png;blackblackhori7.png;parity;A;
+training;;;;;;;;;black;black;vert;4;blackblackvert.png;blackblackvert4.png;magnit;L;
+training;;;;;;;;;black;black;vert;9;blackblackvert.png;blackblackvert9.png;magnit;A;
+training;;;;;;;;;black;black;vert;7;blackblackvert.png;blackblackvert7.png;magnit;A;
+training;;;;;;;;;black;black;hori;4;blackblackhori.png;blackblackhori4.png;parity;L;
+training;;;;;;;;;black;black;vert;6;blackblackvert.png;blackblackvert6.png;magnit;A;
+training;;;;;;;;;black;black;hori;3;blackblackhori.png;blackblackhori3.png;parity;A;
+training;;;;;;;;;black;black;vert;1;blackblackvert.png;blackblackvert1.png;magnit;L;
+start;;;;;;;;;;;;;;;;;-17

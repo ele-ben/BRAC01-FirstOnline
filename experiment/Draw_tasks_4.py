@@ -8,7 +8,6 @@ sys.path.append(r'C:\Users\Elena\Documents\AA_PhD\PsychoPy\MyFunctions')
 from funx_10 import shuffle_rows, noStimRepetition, DfBooleanOrder
 from funx_10 import orderStimWithinTasks_str as pseudorandomize
 
-
 def draw(cuecolor, framecolor, orientation, imgDf, training = ""):
     myDir = "C:/Users/Elena/Documents/AA_PhD/Projects/BRAC01-FirstOnline/experiment/"
     imgDir = "img/"
@@ -134,7 +133,7 @@ def trainingTrials():
     # use self-made no_stimRepetition function to avoid n-1 repetitions of stimuli
     #training.merge(trainDf, on = ["orientation", "stimuli"])
     stimuli = [1,2,3,4,6,7,8,9]
-    training_stimuli = no_StimRepetition(len(trainDf), stimuli)
+    training_stimuli = noStimRepetition(len(trainDf), stimElmns = stimuli)
     trainingShuf = shuffle_rows(training_stimuli, trainDf, "stimulus")
     trainingShuf["display"] = "training"
     return trainingShuf
@@ -155,13 +154,13 @@ def instr_training():
     evenM = "even."
     A = "Press A to indicate "
     L = "Press L to indicate "
+    size = "## "
     # compose sentences in loop to get the possible mappings
     # define lists to loop in
     figures = [[hori, vert], [vert, hori]]
     fig_dict = {hori[22:26]: "blackblackhori.png", vert[22:26]: "blackblackvert.png"}
     keys = [[A, L], [L, A]]
     keys1 = [[A, L], [L, A]]
-    fig = figures[0]
     for fig in figures:
         for key in keys:
             for key1 in keys1:
@@ -170,11 +169,16 @@ def instr_training():
                 "parMap", "greatMap", "lessMap", "oddMap", "evenMap", "firstFig",
                  "secondFig"])
                 # build the instructions row with the possible combinations
-                row = {"display": "Instructions", "magnMap": fig[0] + magn,
-                    "parMap": fig[1] + par, "greatMap": key[0] + greatM,
-                    "lessMap": key[1]+ lessM, "oddMap": key1[0] + oddM,
-                    "evenMap": key1[1] + evenM, "firstFig": fig_dict[fig[0][22:26]],
-                    "secondFig": fig_dict[fig[1][22:26]]}
+                row = {
+                    "display": "Instructions", "magnMap": size + fig[0] + magn,
+                    "parMap": size + fig[1] + par,
+                    "greatMap":size + key[0] + greatM,
+                    "lessMap": size + key[1]+ lessM,
+                    "oddMap": size + key1[0] + oddM,
+                    "evenMap": size + key1[1] + evenM,
+                    "firstFig": fig_dict[fig[0][22:26]],
+                    "secondFig": fig_dict[fig[1][22:26]]
+                    }
                 instr = instr.append(row, ignore_index = True)
                 # create a self-speaking name: orientation of cue for magnitude
                 # key for great and key for odd
@@ -183,8 +187,8 @@ def instr_training():
                 # generate the sequence of trials
                 trainingShuf = trainingTrials()
                 # assign the actual task to each row, given the cue
-                trainingShuf.loc[trainingShuf["orientation"] == fig_dict[fig[0][22:26]], "task"] = "magnit"
-                trainingShuf.loc[trainingShuf["orientation"] == fig_dict[fig[1][22:26]], "task"] = "parity"
+                trainingShuf.loc[trainingShuf["orientation"] == fig[0][22:26], "task"] = "magnit"
+                trainingShuf.loc[trainingShuf["orientation"] == fig[1][22:26], "task"] = "parity"
                 # fill in answer column for Gorilla to give feedvback
                 # extract the correct key from the mapping of the current loop
                 oddKey = key1[0][6:7]
@@ -218,9 +222,12 @@ def buildAndPasteBlocks(df0, df300, startCocoa):
     else:
         print("startCocoa must be either int 0 or 300")
     experiment = pd.DataFrame([], columns = block0.columns)
-    for block in blocks:
+    for i in range(len(blocks)):
+        block = blocks[i]
         stimElmns = list(set(block.stimulus))
         cues = list(set(block.orientation))
+        #set block number
+        block.blockN = i+1
         #help(pseudorandomize)
         Stim_Cues = pseudorandomize(len(block), stimElmns, 1, *cues)
         #help(DfBooleanOrder)
@@ -228,7 +235,9 @@ def buildAndPasteBlocks(df0, df300, startCocoa):
             block, "stimulus", Stim_Cues.stim, "orientation", Stim_Cues.task
         )
         # append a interblock-break screen
-        breakScreen = {"display": "break"}
+        breakScreen = {
+            "display": "break",
+            "breakMessage": "You have completed block " + str(i+1) " out of 8."}
         block_shuf = block_shuf.append(breakScreen, ignore_index=True)
         experiment = experiment.append(block_shuf)
     return experiment
