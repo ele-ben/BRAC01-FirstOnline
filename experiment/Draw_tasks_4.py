@@ -187,18 +187,18 @@ def instr_training():
                 # generate the sequence of trials
                 trainingShuf = trainingTrials()
                 # assign the actual task to each row, given the cue
-                trainingShuf.loc[trainingShuf["orientation"] == fig[0][22:26], "task"] = "magnit"
-                trainingShuf.loc[trainingShuf["orientation"] == fig[1][22:26], "task"] = "parity"
+                trainingShuf.iloc[trainingShuf["orientation"] == fig[0][22:26], "task"] = "magnit"
+                trainingShuf.iloc[trainingShuf["orientation"] == fig[1][22:26], "task"] = "parity"
                 # fill in answer column for Gorilla to give feedvback
                 # extract the correct key from the mapping of the current loop
                 oddKey = key1[0][6:7]
                 evenKey = key1[1][6:7]
                 greatKey = key[0][6:7]
                 lessKey = key[1][6:7]
-                trainingShuf.loc[(trainingShuf["task"] == "magnit") & (trainingShuf["stimulus"] > 5), "ANSWER"] = greatKey
-                trainingShuf.loc[(trainingShuf["task"] == "magnit") & (trainingShuf["stimulus"] < 5), "ANSWER"] = lessKey
-                trainingShuf.loc[(trainingShuf["task"] == "parity") & (trainingShuf["stimulus"] % 2 == 0), "ANSWER"] = evenKey
-                trainingShuf.loc[(trainingShuf["task"] == "parity") & (trainingShuf["stimulus"] % 2 != 0), "ANSWER"] = oddKey
+                trainingShuf.iloc[(trainingShuf["task"] == "magnit") & (trainingShuf["stimulus"] > 5), "ANSWER"] = greatKey
+                trainingShuf.iloc[(trainingShuf["task"] == "magnit") & (trainingShuf["stimulus"] < 5), "ANSWER"] = lessKey
+                trainingShuf.iloc[(trainingShuf["task"] == "parity") & (trainingShuf["stimulus"] % 2 == 0), "ANSWER"] = evenKey
+                trainingShuf.iloc[(trainingShuf["task"] == "parity") & (trainingShuf["stimulus"] % 2 != 0), "ANSWER"] = oddKey
                 #paste the training trials below the instructions row
                 instrPlusTraining = pd.concat([instr, trainingShuf], ignore_index=True, sort=False)
                 # add another row for the last display before the experiment starts
@@ -227,7 +227,7 @@ def buildAndPasteBlocks(df0, df300, startCocoa):
         stimElmns = list(set(block.stimulus))
         cues = list(set(block.orientation))
         #set block number
-        block.blockN = i+1
+        block.blockN = i
         #help(pseudorandomize)
         Stim_Cues = pseudorandomize(len(block), stimElmns, 1, *cues)
         #help(DfBooleanOrder)
@@ -237,7 +237,8 @@ def buildAndPasteBlocks(df0, df300, startCocoa):
         # append a interblock-break screen
         breakScreen = {
             "display": "break",
-            "breakMessage": "You have completed block " + str(i+1) " out of 8."}
-        block_shuf = block_shuf.append(breakScreen, ignore_index=True)
-        experiment = experiment.append(block_shuf)
+            "breakMessage": "You have completed block " +str(i+1)+ " out of 8."
+            }
+        block_shuf = block_shuf.append(breakScreen, ignore_index=True, sort = False)
+        experiment = experiment.append(block_shuf, sort = False)
     return experiment

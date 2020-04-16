@@ -30,4 +30,4 @@ for i in range(4):
     for startCocoa in [0, 300]:
         experimentDf = buildAndPasteBlocks(df0, df300, startCocoa)
         fileName = "BRAC1_first" + str(startCocoa) + "_num" + str(i)
-        experimentDf.to_csv(sheetDir+fileName+".csv")
+        experimentDf.to_csv(sheetDir+fileName+".csv", sep = ";")
