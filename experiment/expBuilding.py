@@ -9,6 +9,7 @@ from Draw_tasks_4 import draw, drawStimuli, trainingTrials, instr_training, buil
 
 # project folders
 sheetDir = "spreadsheets/"
+imgDir = "img/"
 
 #-------- Instructions + training Trials
 
@@ -17,17 +18,20 @@ instr_training()
 
 #-------- Stimuli and experimental trials
 
-# Draw the stimuli and save them in img folder
-# Crate dataframes with all possible kind of trials
-df0_df300 = drawStimuli("BRAC1")
-df0 = df0_df300[0]
-df300 = df0_df300[1]
+for experiment in ["BRAC1", "BRAC2"]:
 
-# Create experimental blocks and pseudo randomize them
-# create a sequence of 8 block starting with cocoa = 0 and one starting with
-# cocoa = 300
-for i in range(4):
-    for startCocoa in [0, 300]:
-        experimentDf = buildAndPasteBlocks(df0, df300, startCocoa)
-        fileName = "BRAC1_first" + str(startCocoa) + "_num" + str(i)
-        experimentDf.to_csv(sheetDir+fileName+".csv", sep = ";")
+    # Draw the stimuli and save them in img folder
+    # Crate dataframes with all possible kind of trials
+    df0_df300 = drawStimuli(experiment, imgDir)
+    # save the df with cocoa = 0 and = 300 separately
+    df0 = df0_df300[0]
+    df300 = df0_df300[1]
+
+    # Create experimental blocks and pseudo randomize them
+    # create a sequence of 8 block starting with cocoa = 0 and one starting with
+    # cocoa = 300
+    for i in range(4):
+        for startCocoa in [0, 300]:
+            experimentDf = buildAndPasteBlocks(df0, df300, startCocoa)
+            fileName = "experiment" + str(startCocoa) + "_num" + str(i)
+            experimentDf.to_csv(sheetDir+fileName+".csv", sep = ";")

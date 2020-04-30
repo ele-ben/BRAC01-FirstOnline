@@ -8,9 +8,9 @@ sys.path.append(r'C:\Users\Elena\Documents\AA_PhD\PsychoPy\MyFunctions')
 from funx_10 import shuffle_rows, noStimRepetition, DfBooleanOrder
 from funx_10 import orderStimWithinTasks_str as pseudorandomize
 
-def draw(cuecolor, framecolor, orientation, imgDf, training = ""):
-    myDir = "C:/Users/Elena/Documents/AA_PhD/Projects/BRAC01-FirstOnline/experiment/"
-    imgDir = "img/"
+def draw(cuecolor, framecolor, orientation, imgDf, training = "", imgDir):
+    #myDir = "C:/Users/Elena/Documents/AA_PhD/Projects/BRAC01-FirstOnline/experiment/"
+    #imgDir = "img/"
     background = (255,255,255)
     # General
     w, h = 800, 600
@@ -46,7 +46,7 @@ def draw(cuecolor, framecolor, orientation, imgDf, training = ""):
     img1.rectangle(shape, fill = background, outline =framecolor, width=2)
     img1.rectangle(shape2, fill= cuecolor, outline=cuecolor)
     # save the image, on purpose without number
-    img.save(myDir + imgDir + cueFileName)
+    img.save(imgDir + cueFileName)
     # because of the experimental design, I don't want any number when both are
     # black
     if cuecolor == "black" and framecolor == "black" and training == "":
@@ -62,7 +62,7 @@ def draw(cuecolor, framecolor, orientation, imgDf, training = ""):
             img1.text((x, y), stimulus, fill=color, font=font, align="center")
             stimFileName = cuecolor + framecolor + orientation + stimulus + ".png"
             # save the image with each number
-            img.save(myDir + imgDir + stimFileName)
+            img.save(imgDir + stimFileName)
             # save image info in a dictionary to append to a dataframe
             row = {"cuecolor": cuecolor, "framecolor": framecolor, "orientation": orientation,
                 "stimulus": int(stimulus), "cueFileName": cueFileName, "stimFileName": stimFileName
@@ -71,56 +71,48 @@ def draw(cuecolor, framecolor, orientation, imgDf, training = ""):
             imgDf = imgDf.append(row, ignore_index = True)
     return imgDf
 
-# run the function in a loop to generate all the requred colours and numbers
-# generate the images and save the df with the details in a csv
-def drawStimuli(BRAC):
-    if BRAC == "BRAC1":
-        colNames = ["cuecolor", "framecolor", "orientation", "stimulus", "cueFileName",
-            "stimFileName"]
-        # prepare empty df
-        blackFrDf = pd.DataFrame([], columns = colNames)
-        # first BRAC01 file, where the frame stays black and the cue varies
-        #imgSheetName = "blackFrame"
-        # run the function for all the possible combinations of BRAC01
-        for cuecolor in ["blue", "red", "black"]:
+# call the draw function to draw the images and save their details in a df
+# info in the df are further organized s.t it represents the minimum info needed
+# to build each experimental block
+def drawStimuli(experiment, imgDir):
+    # prepare empty df
+    colNames = ["cuecolor", "framecolor", "orientation", "stimulus", "cueFileName",
+        "stimFileName"]
+    blackFrDf = pd.DataFrame([], columns = colNames)
+    # the images to be drawn are different in BRAC1 and BRAC2
+    if experiment == "BRAC1":
+        for cuecolor in ["blue", "red", "black"]: # cue varies and frame stays black
             framecolor = "black"
             for orientation in ["hori", "vert"]:
-                blackFrDf = draw(cuecolor, framecolor, orientation, blackFrDf)
-        # add other experimental or Gorilla variables
-        blackFrDf["display"] = "trial"
-        blackFrDf["cocoa"] = 0
-        blackFrDf["cue0FileName"] = blackFrDf["cueFileName"]
-        #define cue0FileName column for cocoa = 300, when the cue-frame config is
-        # black black before getting the colours
-        blackFrDf300 = blackFrDf.copy()
-        blackFrDf300["cocoa"] = 300
-        for i in range(len(blackFrDf300)):
-            if blackFrDf300["orientation"].iloc[i] == "hori":
-                blackFrDf300["cue0FileName"].iloc[i] = "blackblackhori.png"
-            elif blackFrDf300["orientation"].iloc[i] == "vert":
-                blackFrDf300["cue0FileName"].iloc[i] = "blackblackvert.png"
-        #append
-        #blackFrDf = blackFrDf.append(blackFrDf300, ignore_index = True)
-        # ....
-        # return the 2 dataframes with the possible stimuli rows
-        #blackFrDf.to_csv("spreadsheets/"+imgSheetName + ".csv", sep = ";")
-        return [blackFrDf, blackFrDf300]
-    ####################################### FIX BRAC 2!!!!!!!!!!!!
-    elif BRAC == "BRAC2":
-        # second BRAC02 file, where the cue stays black and the frame varies
-        blackCuDf = pd.DataFrame([], columns = colNames)
-        # declare the name of the csv
-        imgSheetName = "blackCue"
-        for framecolor in ["blue", "red"]: # I don't need the black here
+                blackFrDf = draw(cuecolor, framecolor, orientation, blackFrDf, imgDir)
+    elif experiment == "BRAC2":
+        for framecolor in ["blue", "red", "black"]: # frame varies and cue stays black
             cuecolor = "black"
             for orientation in ["hori", "vert"]:
-                blackCuDf = draw(cuecolor, framecolor, orientation, blackCuDf)
-        # add other variables relevant for Gorilla
-        # ....
-        # save the df in a csv to be uploaded in Gorilla
-        blackCuDf.to_csv("spreadsheets/"+imgSheetName + ".csv", sep = ";")
+                blackFrDf = draw(cuecolor, framecolor, orientation, blackFrDf, imgDir)
+    # add other experimental or Gorilla variables
+    blackFrDf["display"] = "trial"
+    blackFrDf["cocoa"] = 0 # the delay is set to 0
+    # we create a column to define what happens the first 300 ms of cue presentation
+    # When delay - cocoa - is 0, nothin changes between the first and the second
+    # 300 ms, thus the column values are set identical to cueFileName
+    blackFrDf["cue0FileName"] = blackFrDf["cueFileName"]
+    # create a copy of the df in which cocoa will be 300
+    blackFrDf300 = blackFrDf.copy()
+    blackFrDf300["cocoa"] = 300
+    # when cocoa=300, in the first 300 ms both shapes are black
+    # in order to assign the correct image, we need to know whether the cue is
+    # hori or vert in that trial
+    for i in range(len(blackFrDf300)):
+        # if cue is hori then assign the blackblack img with hori cue
+        if blackFrDf300["orientation"].iloc[i] == "hori":
+            blackFrDf300["cue0FileName"].iloc[i] = "blackblackhori.png"
+        # if cue is vert then assign the blackblack img with vert cue
+        elif blackFrDf300["orientation"].iloc[i] == "vert":
+            blackFrDf300["cue0FileName"].iloc[i] = "blackblackvert.png"
+    return [blackFrDf, blackFrDf300]
     else:
-        print("function input must be either string BRAC1 or BRAC2")
+        print("function first input must be either string BRAC1 or BRAC2")
 
 ## - Defining training trials
 def trainingTrials():
