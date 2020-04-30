@@ -8,7 +8,7 @@ sys.path.append(r'C:\Users\Elena\Documents\AA_PhD\PsychoPy\MyFunctions')
 from funx_10 import shuffle_rows, noStimRepetition, DfBooleanOrder
 from funx_10 import orderStimWithinTasks_str as pseudorandomize
 
-def draw(cuecolor, framecolor, orientation, imgDf, training = "", imgDir):
+def draw(cuecolor, framecolor, orientation, imgDf, imgDir, training = ""):
     #myDir = "C:/Users/Elena/Documents/AA_PhD/Projects/BRAC01-FirstOnline/experiment/"
     #imgDir = "img/"
     background = (255,255,255)
@@ -90,6 +90,8 @@ def drawStimuli(experiment, imgDir):
             cuecolor = "black"
             for orientation in ["hori", "vert"]:
                 blackFrDf = draw(cuecolor, framecolor, orientation, blackFrDf, imgDir)
+    else:
+        print("function first input must be either string BRAC1 or BRAC2")
     # add other experimental or Gorilla variables
     blackFrDf["display"] = "trial"
     blackFrDf["cocoa"] = 0 # the delay is set to 0
@@ -111,17 +113,15 @@ def drawStimuli(experiment, imgDir):
         elif blackFrDf300["orientation"].iloc[i] == "vert":
             blackFrDf300["cue0FileName"].iloc[i] = "blackblackvert.png"
     return [blackFrDf, blackFrDf300]
-    else:
-        print("function first input must be either string BRAC1 or BRAC2")
 
 ## - Defining training trials
-def trainingTrials():
+def trainingTrials(imgDir):
     # prepare empty df
     colNames = ["cuecolor", "framecolor", "orientation", "stimulus", "cueFileName",
         "stimFileName", "task", "ANSWER"]
     trainDf = pd.DataFrame([], columns = colNames)
     for orientation in ["hori", "vert"]:
-        trainDf = draw("black", "black", orientation, trainDf, training = 1)
+        trainDf = draw("black", "black", orientation, trainDf, imgDir, training = 1)
     # use self-made no_stimRepetition function to avoid n-1 repetitions of stimuli
     #training.merge(trainDf, on = ["orientation", "stimuli"])
     stimuli = [1,2,3,4,6,7,8,9]
@@ -133,7 +133,7 @@ def trainingTrials():
 
 ##- Define the spreadsheets driving instructions presentations and trainingShuf
 # create the 8 different instructions + training spreadsheets
-def instr_training():
+def instr_training(imgDir):
 #INSTRUCTIONS
 # define the strings composing each instruction
     magn =  "greater or less than 5."
@@ -177,20 +177,20 @@ def instr_training():
                 instFile = fig[0][22:26] + key[0][6:7] + key1[0][6:7]
                 # TRAINING TRIALS
                 # generate the sequence of trials
-                trainingShuf = trainingTrials()
+                trainingShuf = trainingTrials(imgDir)
                 # assign the actual task to each row, given the cue
-                trainingShuf.iloc[trainingShuf["orientation"] == fig[0][22:26], "task"] = "magnit"
-                trainingShuf.iloc[trainingShuf["orientation"] == fig[1][22:26], "task"] = "parity"
+                trainingShuf.loc[trainingShuf["orientation"] == fig[0][22:26], "task"] = "magnit"
+                trainingShuf.loc[trainingShuf["orientation"] == fig[1][22:26], "task"] = "parity"
                 # fill in answer column for Gorilla to give feedvback
                 # extract the correct key from the mapping of the current loop
                 oddKey = key1[0][6:7]
                 evenKey = key1[1][6:7]
                 greatKey = key[0][6:7]
                 lessKey = key[1][6:7]
-                trainingShuf.iloc[(trainingShuf["task"] == "magnit") & (trainingShuf["stimulus"] > 5), "ANSWER"] = greatKey
-                trainingShuf.iloc[(trainingShuf["task"] == "magnit") & (trainingShuf["stimulus"] < 5), "ANSWER"] = lessKey
-                trainingShuf.iloc[(trainingShuf["task"] == "parity") & (trainingShuf["stimulus"] % 2 == 0), "ANSWER"] = evenKey
-                trainingShuf.iloc[(trainingShuf["task"] == "parity") & (trainingShuf["stimulus"] % 2 != 0), "ANSWER"] = oddKey
+                trainingShuf.loc[(trainingShuf["task"] == "magnit") & (trainingShuf["stimulus"] > 5), "ANSWER"] = greatKey
+                trainingShuf.loc[(trainingShuf["task"] == "magnit") & (trainingShuf["stimulus"] < 5), "ANSWER"] = lessKey
+                trainingShuf.loc[(trainingShuf["task"] == "parity") & (trainingShuf["stimulus"] % 2 == 0), "ANSWER"] = evenKey
+                trainingShuf.loc[(trainingShuf["task"] == "parity") & (trainingShuf["stimulus"] % 2 != 0), "ANSWER"] = oddKey
                 #paste the training trials below the instructions row
                 instrPlusTraining = pd.concat([instr, trainingShuf], ignore_index=True, sort=False)
                 # add another row for the last display before the experiment starts
