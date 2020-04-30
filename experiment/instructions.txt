@@ -1,0 +1,15 @@
+# Welcome and Thank you for taking part!
+
+### **Instructions:**
+We will present you with numbers from 1 to 9, 5 excluded.
+For each number, your task is to tell whether the number is odd or even or whether it is greater than 5 or less than 5.
+
+Before each number appears, it will appear a rectangle at the top of the screen. The orientation of the rectangle will indicate which task you are to perform. 
+You will see two examples in the next screens.
+
+The rectangle and the number will be surrounded by a frame. You will notice that this frame will appear in different colours. Yet the frame and its colour are not informative for your task.
+
+### **Tip:**
+Please read the **2 following screens carefully** and try to memorize the information.
+You can **note them down** on a piece of paper if you want. However, you will
+be able to read these instructions as much as you want, before the real experiment starts!
