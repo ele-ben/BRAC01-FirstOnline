@@ -13,8 +13,30 @@ imgDir = "img/"
 
 #-------- Instructions + training Trials
 
+# define the strings composing each instruction
+magn =  "greater or less than 5."
+par = "odd or even."
+hori = "When the rectangle is horizontal, your task is to tell whether the number is "
+vert = "When the rectangle is vertical, your task is to tell whether the number is "
+greatM = "greater than 5."
+lessM = "less than 5."
+oddM = "odd."
+evenM = "even."
+A = "Press A to indicate "
+L = "Press L to indicate "
+#size = "## "
 # Create 8 spreadsheets and save them in spreadsheets folder
+figures = [[hori, vert], [vert, hori]]
+fig_dict = {hori[22:26]: "blackblackhori.png", vert[22:26]: "blackblackvert.png"}
+keys = [[A, L], [L, A]]
+keys1 = [[A, L], [L, A]]
+for fig in figures:
+    for key in keys:
+        for key1 in keys1:
+
 instr_training(imgDir)
+
+draw(cuecolor, framecolor, orientation, imgDf, imgDir)
 
 #-------- Stimuli and experimental trials
 

@@ -135,27 +135,27 @@ def trainingTrials(imgDir):
 # create the 8 different instructions + training spreadsheets
 def instr_training(imgDir):
 #INSTRUCTIONS
-# define the strings composing each instruction
-    magn =  "greater or less than 5."
-    par = "odd or even."
-    hori = "When the rectangle is horizontal, your task is to tell whether the number is "
-    vert = "When the rectangle is vertical, your task is to tell whether the number is "
-    greatM = "greater than 5."
-    lessM = "less than 5."
-    oddM = "odd."
-    evenM = "even."
-    A = "Press A to indicate "
-    L = "Press L to indicate "
-    size = "## "
-    # compose sentences in loop to get the possible mappings
-    # define lists to loop in
-    figures = [[hori, vert], [vert, hori]]
-    fig_dict = {hori[22:26]: "blackblackhori.png", vert[22:26]: "blackblackvert.png"}
-    keys = [[A, L], [L, A]]
-    keys1 = [[A, L], [L, A]]
-    for fig in figures:
-        for key in keys:
-            for key1 in keys1:
+# # define the strings composing each instruction
+#     magn =  "greater or less than 5."
+#     par = "odd or even."
+#     hori = "When the rectangle is horizontal, your task is to tell whether the number is "
+#     vert = "When the rectangle is vertical, your task is to tell whether the number is "
+#     greatM = "greater than 5."
+#     lessM = "less than 5."
+#     oddM = "odd."
+#     evenM = "even."
+#     A = "Press A to indicate "
+#     L = "Press L to indicate "
+#     size = "## "
+    # # compose sentences in loop to get the possible mappings
+    # # define lists to loop in
+    # figures = [[hori, vert], [vert, hori]]
+    # fig_dict = {hori[22:26]: "blackblackhori.png", vert[22:26]: "blackblackvert.png"}
+    # keys = [[A, L], [L, A]]
+    # keys1 = [[A, L], [L, A]]
+    # for fig in figures:
+    #     for key in keys:
+    #         for key1 in keys1:
                 # prepare the dataframe to host instructions info
                 instr = pd.DataFrame([], columns = ["display", "magnMap",
                 "parMap", "greatMap", "lessMap", "oddMap", "evenMap", "firstFig",
@@ -196,8 +196,8 @@ def instr_training(imgDir):
                 # add another row for the last display before the experiment starts
                 startDisplay = {"display": "start", "InstrRow": "-" + str(len(instrPlusTraining))}
                 instrPlusTraining = instrPlusTraining.append(startDisplay, ignore_index = True)
-                # export the spreadsheets
-                instrPlusTraining.to_csv("spreadsheets/"+ instFile + ".csv", sep = ";", index= False)
+                # # export the spreadsheets
+                # instrPlusTraining.to_csv("spreadsheets/"+ instFile + ".csv", sep = ";", index= False)
 
 # build blocks, pseudorandomize them and paste them together
 def buildAndPasteBlocks(df0, df300, startCocoa):
