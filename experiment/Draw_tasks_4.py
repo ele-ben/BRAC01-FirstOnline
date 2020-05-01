@@ -133,7 +133,7 @@ def trainingTrials(imgDir):
 
 ##- Define the spreadsheets driving instructions presentations and trainingShuf
 # create the 8 different instructions + training spreadsheets
-def instr_training(imgDir):
+#def instr_training(imgDir):
 #INSTRUCTIONS
 # # define the strings composing each instruction
 #     magn =  "greater or less than 5."
@@ -157,45 +157,47 @@ def instr_training(imgDir):
     #     for key in keys:
     #         for key1 in keys1:
                 # prepare the dataframe to host instructions info
-                instr = pd.DataFrame([], columns = ["display", "magnMap",
-                "parMap", "greatMap", "lessMap", "oddMap", "evenMap", "firstFig",
-                 "secondFig"])
-                # build the instructions row with the possible combinations
-                row = {
-                    "display": "Instructions", "magnMap": size + fig[0] + magn,
-                    "parMap": size + fig[1] + par,
-                    "greatMap":size + key[0] + greatM,
-                    "lessMap": size + key[1]+ lessM,
-                    "oddMap": size + key1[0] + oddM,
-                    "evenMap": size + key1[1] + evenM,
-                    "firstFig": fig_dict[fig[0][22:26]],
-                    "secondFig": fig_dict[fig[1][22:26]]
-                    }
-                instr = instr.append(row, ignore_index = True)
-                # create a self-speaking name: orientation of cue for magnitude
-                # key for great and key for odd
-                instFile = fig[0][22:26] + key[0][6:7] + key1[0][6:7]
-                # TRAINING TRIALS
-                # generate the sequence of trials
-                trainingShuf = trainingTrials(imgDir)
-                # assign the actual task to each row, given the cue
-                trainingShuf.loc[trainingShuf["orientation"] == fig[0][22:26], "task"] = "magnit"
-                trainingShuf.loc[trainingShuf["orientation"] == fig[1][22:26], "task"] = "parity"
-                # fill in answer column for Gorilla to give feedvback
-                # extract the correct key from the mapping of the current loop
-                oddKey = key1[0][6:7]
-                evenKey = key1[1][6:7]
-                greatKey = key[0][6:7]
-                lessKey = key[1][6:7]
-                trainingShuf.loc[(trainingShuf["task"] == "magnit") & (trainingShuf["stimulus"] > 5), "ANSWER"] = greatKey
-                trainingShuf.loc[(trainingShuf["task"] == "magnit") & (trainingShuf["stimulus"] < 5), "ANSWER"] = lessKey
-                trainingShuf.loc[(trainingShuf["task"] == "parity") & (trainingShuf["stimulus"] % 2 == 0), "ANSWER"] = evenKey
-                trainingShuf.loc[(trainingShuf["task"] == "parity") & (trainingShuf["stimulus"] % 2 != 0), "ANSWER"] = oddKey
+    # instr = pd.DataFrame([], columns = ["display", "magnMap",
+    # "parMap", "greatMap", "lessMap", "oddMap", "evenMap", "firstFig",
+    #  "secondFig"])
+    # # build the instructions row with the possible combinations
+    # row = {
+    #     "display": "Instructions", "magnMap": size + fig[0] + magn,
+    #     "parMap": size + fig[1] + par,
+    #     "greatMap":size + key[0] + greatM,
+    #     "lessMap": size + key[1]+ lessM,
+    #     "oddMap": size + key1[0] + oddM,
+    #     "evenMap": size + key1[1] + evenM,
+    #     "firstFig": fig_dict[fig[0][22:26]],
+    #     "secondFig": fig_dict[fig[1][22:26]]
+    #     }
+    # instr = instr.append(row, ignore_index = True)
+    # create a self-speaking name: orientation of cue for magnitude
+    # key for great and key for odd
+    #instFile = fig[0][22:26] + key[0][6:7] + key1[0][6:7]
+    # TRAINING TRIALS
+    # generate the sequence of trials
+    #trainingShuf = trainingTrials(imgDir)
+
+def ANSWER(trainingShuf, fig, key, key1):
+    # assign the actual task to each row, given the cue
+    trainingShuf.loc[trainingShuf["orientation"] == fig[0][22:26], "task"] = "magnit"
+    trainingShuf.loc[trainingShuf["orientation"] == fig[1][22:26], "task"] = "parity"
+    # fill in answer column for Gorilla to give feedvback
+    # extract the correct key from the mapping of the current loop
+    oddKey = key1[0][6:7]
+    evenKey = key1[1][6:7]
+    greatKey = key[0][6:7]
+    lessKey = key[1][6:7]
+    trainingShuf.loc[(trainingShuf["task"] == "magnit") & (trainingShuf["stimulus"] > 5), "ANSWER"] = greatKey
+    trainingShuf.loc[(trainingShuf["task"] == "magnit") & (trainingShuf["stimulus"] < 5), "ANSWER"] = lessKey
+    trainingShuf.loc[(trainingShuf["task"] == "parity") & (trainingShuf["stimulus"] % 2 == 0), "ANSWER"] = evenKey
+    trainingShuf.loc[(trainingShuf["task"] == "parity") & (trainingShuf["stimulus"] % 2 != 0), "ANSWER"] = oddKey
                 #paste the training trials below the instructions row
-                instrPlusTraining = pd.concat([instr, trainingShuf], ignore_index=True, sort=False)
-                # add another row for the last display before the experiment starts
-                startDisplay = {"display": "start", "InstrRow": "-" + str(len(instrPlusTraining))}
-                instrPlusTraining = instrPlusTraining.append(startDisplay, ignore_index = True)
+                # instrPlusTraining = pd.concat([instr, trainingShuf], ignore_index=True, sort=False)
+                # # add another row for the last display before the experiment starts
+                # startDisplay = {"display": "start", "InstrRow": "-" + str(len(instrPlusTraining))}
+                # instrPlusTraining = instrPlusTraining.append(startDisplay, ignore_index = True)
                 # # export the spreadsheets
                 # instrPlusTraining.to_csv("spreadsheets/"+ instFile + ".csv", sep = ";", index= False)
 
