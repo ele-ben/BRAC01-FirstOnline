@@ -13,6 +13,7 @@ imgDir = "img/"
 
 # Do (almost) the same operations for th e2 experiments
 for experiment in ["BRAC1", "BRAC2"]:
+    print(experiment)
 
     #-------- Instructions + training Trials
 
@@ -37,11 +38,6 @@ for experiment in ["BRAC1", "BRAC2"]:
     keys = [[A, L], [L, A]]
     keys1 = [[A, L], [L, A]]
 
-    # preallocate instructions df
-    instructions = pd.DataFrame([], columns = ["display", "magnMap",
-    "parMap", "greatMap", "lessMap", "oddMap", "evenMap", "firstFig",
-     "secondFig"])
-
     # loop over the string list to build the different experiment versions having
     # different mappings
     for fig in figures:
@@ -49,6 +45,11 @@ for experiment in ["BRAC1", "BRAC2"]:
             for key1 in keys1:
 
                 # -------- Instructions + training Trials --------
+
+                # preallocate instructions df
+                instructions = pd.DataFrame([], columns = ["display", "magnMap",
+                "parMap", "greatMap", "lessMap", "oddMap", "evenMap", "firstFig",
+                 "secondFig"])
 
                 # build the instructions row with the current combination
                 row = {
@@ -69,6 +70,7 @@ for experiment in ["BRAC1", "BRAC2"]:
                 trainingShuf = trainingTrials(imgDir)
                 # fill the right answer to training trials  given the current combination
                 ANSWER(trainingShuf, fig, key, key1)
+                print(trainingShuf[:3])
                 # add the start display as last row of training trials
                 startDisplay = {"display": "start"}
                 trainingShuf.append(startDisplay, ignore_index = True)
@@ -90,8 +92,11 @@ for experiment in ["BRAC1", "BRAC2"]:
                 # Create a sequence of 8 block starting with cocoa = 0 and one starting with
                 # cocoa = 300
                 for startCocoa in [0, 300]:
+                    print(startCocoa)
                     # multiply the basic dfs to create a block, randomize, pile up
-                    experimentDf = buildAndPasteBlocks(df0, df300, startCocoa)
+                    experimentDf = buildAndPasteBlocks(
+                        df0, df300, startCocoa, fig, key, key1
+                        )
                     # concatenate instructions, training block, experimental blocks
                     fullExperiment = pd.concat(
                         [instructions, trainingShuf, experimentDf],
@@ -101,24 +106,3 @@ for experiment in ["BRAC1", "BRAC2"]:
                     fullExperiment.to_csv(sheetDir + fileName +".csv", sep = ";")
 
 # draw(cuecolor, framecolor, orientation, imgDf, imgDir)
-#
-# #-------- Stimuli and experimental trials
-#
-# for experiment in ["BRAC1", "BRAC2"]:
-#     print(experiment)
-#     # Draw the stimuli and save them in img folder
-#     # Crate dataframes with all possible kind of trials
-#     df0_df300 = drawStimuli(experiment, imgDir)
-#     # save the df with cocoa = 0 and = 300 separately
-#     df0 = df0_df300[0]
-#     df300 = df0_df300[1]
-#     #print(df0[:5])
-#     # Create experimental blocks and pseudo randomize them
-#     # create a sequence of 8 block starting with cocoa = 0 and one starting with
-#     # cocoa = 300
-#     for i in range(4):
-#         print(i)
-#         for startCocoa in [0, 300]:
-#             experimentDf = buildAndPasteBlocks(df0, df300, startCocoa)
-#             fileName = experiment + "_1st"+ str(startCocoa) + "_n" + str(i)
-#             experimentDf.to_csv(sheetDir+fileName+".csv", sep = ";")

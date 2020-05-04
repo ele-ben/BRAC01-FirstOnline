@@ -131,54 +131,6 @@ def trainingTrials(imgDir):
     return trainingShuf
     #trainingShuf.to_csv("spreadsheets/"+"trainingTrials" + ".csv", sep = ";")
 
-##- Define the spreadsheets driving instructions presentations and trainingShuf
-# create the 8 different instructions + training spreadsheets
-#def instr_training(imgDir):
-#INSTRUCTIONS
-# # define the strings composing each instruction
-#     magn =  "greater or less than 5."
-#     par = "odd or even."
-#     hori = "When the rectangle is horizontal, your task is to tell whether the number is "
-#     vert = "When the rectangle is vertical, your task is to tell whether the number is "
-#     greatM = "greater than 5."
-#     lessM = "less than 5."
-#     oddM = "odd."
-#     evenM = "even."
-#     A = "Press A to indicate "
-#     L = "Press L to indicate "
-#     size = "## "
-    # # compose sentences in loop to get the possible mappings
-    # # define lists to loop in
-    # figures = [[hori, vert], [vert, hori]]
-    # fig_dict = {hori[22:26]: "blackblackhori.png", vert[22:26]: "blackblackvert.png"}
-    # keys = [[A, L], [L, A]]
-    # keys1 = [[A, L], [L, A]]
-    # for fig in figures:
-    #     for key in keys:
-    #         for key1 in keys1:
-                # prepare the dataframe to host instructions info
-    # instr = pd.DataFrame([], columns = ["display", "magnMap",
-    # "parMap", "greatMap", "lessMap", "oddMap", "evenMap", "firstFig",
-    #  "secondFig"])
-    # # build the instructions row with the possible combinations
-    # row = {
-    #     "display": "Instructions", "magnMap": size + fig[0] + magn,
-    #     "parMap": size + fig[1] + par,
-    #     "greatMap":size + key[0] + greatM,
-    #     "lessMap": size + key[1]+ lessM,
-    #     "oddMap": size + key1[0] + oddM,
-    #     "evenMap": size + key1[1] + evenM,
-    #     "firstFig": fig_dict[fig[0][22:26]],
-    #     "secondFig": fig_dict[fig[1][22:26]]
-    #     }
-    # instr = instr.append(row, ignore_index = True)
-    # create a self-speaking name: orientation of cue for magnitude
-    # key for great and key for odd
-    #instFile = fig[0][22:26] + key[0][6:7] + key1[0][6:7]
-    # TRAINING TRIALS
-    # generate the sequence of trials
-    #trainingShuf = trainingTrials(imgDir)
-
 def ANSWER(trainingShuf, fig, key, key1):
     # assign the actual task to each row, given the cue
     trainingShuf.loc[trainingShuf["orientation"] == fig[0][22:26], "task"] = "magnit"
@@ -193,16 +145,135 @@ def ANSWER(trainingShuf, fig, key, key1):
     trainingShuf.loc[(trainingShuf["task"] == "magnit") & (trainingShuf["stimulus"] < 5), "ANSWER"] = lessKey
     trainingShuf.loc[(trainingShuf["task"] == "parity") & (trainingShuf["stimulus"] % 2 == 0), "ANSWER"] = evenKey
     trainingShuf.loc[(trainingShuf["task"] == "parity") & (trainingShuf["stimulus"] % 2 != 0), "ANSWER"] = oddKey
-                #paste the training trials below the instructions row
-                # instrPlusTraining = pd.concat([instr, trainingShuf], ignore_index=True, sort=False)
-                # # add another row for the last display before the experiment starts
-                # startDisplay = {"display": "start", "InstrRow": "-" + str(len(instrPlusTraining))}
-                # instrPlusTraining = instrPlusTraining.append(startDisplay, ignore_index = True)
-                # # export the spreadsheets
-                # instrPlusTraining.to_csv("spreadsheets/"+ instFile + ".csv", sep = ";", index= False)
+    #print(trainingShuf[:4])
+
+
+magn =  "greater or less than 5."
+par = "odd or even."
+hori = "When the rectangle is horizontal, your task is to tell whether the number is "
+vert = "When the rectangle is vertical, your task is to tell whether the number is "
+greatM = "greater than 5."
+lessM = "less than 5."
+oddM = "odd."
+evenM = "even."
+A = "Press A to indicate "
+L = "Press L to indicate "
+size = "## "
+
+# fit the strings in convenient lists
+figures = [[hori, vert], [vert, hori]]
+fig_dict = {"hori": "blackblackhori.png", "vert": "blackblackvert.png"}
+keys = [[A, L], [L, A]]
+keys1 = [[A, L], [L, A]]
+fig = figures[0]
+key = keys[0]
+ke1 = keys1[0]
+
+def mappingsGuide(fig,  key, key1, imgDir):
+    """Draw a mapping guide that visually describes cue-task and response-key
+    mappings.
+
+    Based on the current mappings draw a figure with 2 frame + cue images and
+    the 4 words of the responses below them, such that their position suggests
+    whther each word is associated to the left- or the righmost key.
+
+    Parameters
+    ----------
+    task_cue_map: current task cue mapping
+    key_resp_map: current response-key mapping
+    cueMap: string indictaing current task_cue_map
+    keyMap: string indictaing current key_resp_map
+    cues: output of drawCues function
+    cueDir: drectory where to save the output figures
+
+    Returns
+    ----------
+    string
+        the name of the figure generated.
+    """
+    # define white background
+    background = (255, 255, 255)
+    # define dimension of the outer frame in pixels
+    lato = 120
+    imageSize = [lato, lato]
+    spaceBetw = lato
+    # define dimension of the image in pixels
+    w, h = imageSize[0]*2 + spaceBetw*3, imageSize[1]*2
+    # define coordinates for right frame
+    topLx_FrameRx = (w - spaceBetw - lato, h/2 - lato/2)
+    botRx_FrameRx = (topLx_FrameRx[0] + lato, h/2 + lato/2)
+    # ... and for left frame
+    topLx_FrameLx = (topLx_FrameRx[0] - spaceBetw - lato, h/2 - lato/2)
+    botRx_FrameLx = (topLx_FrameLx[0] + lato, h/2 + lato/2)
+    # save the frame coordinates
+    frame_lx = [topLx_FrameLx, botRx_FrameLx]
+    frame_rx = [topLx_FrameRx, botRx_FrameRx]
+    # define size of cue
+    lato_corto = 50
+    lato_lungo = 20
+    # define cues coordinate in the right frame
+    topLx_CueRx_hori = (topLx_FrameRx[0] + (lato/2 - lato_lungo/2), topLx_FrameRx[1] + 10)
+    botRx_CueRx_hori = (topLx_CueRx_hori[0] + lato_lungo, topLx_CueRx_hori[1] + lato_corto)
+    # define cues coordinate in the left frame
+    topLx_CueLx_vert = (topLx_FrameLx[0] + (lato/2 - lato_corto/2), topLx_FrameLx[1] + 10)
+    botRx_CueLx_vert = (topLx_CueLx_vert[0] + lato_corto, topLx_CueLx_vert[1] + lato_lungo)
+    # ... save each into a "cue" object
+    cue_lx = [topLx_CueRx_hori, botRx_CueRx_hori]
+    cue_rx = [topLx_CueLx_vert, botRx_CueLx_vert]
+    # save the cues in a list
+    shapes = [frame_lx, cue_lx, frame_rx, cue_rx]
+    # define the text info
+    font = ImageFont.truetype('arial.ttf', size=20)
+    # define text x-coordinates for words indicating the 4 possible responses
+    x_coord = [
+        topLx_FrameRx[0], topLx_FrameRx[0] + lato, topLx_FrameLx[0],
+        topLx_FrameLx[0] + lato
+        ]
+    # define where we should write what, based on the mapping
+    if fig[0] == "blackblackvert.png": # this means magnitude is vertical
+        tasks = ["magnit", "parity"] # we first write the magnit responses
+    else: # this means magnitude is hori and parity is vertical
+        tasks = ["parity", "magnit"] # we first write the parity responses
+    if key[0][6:7] == "A": # this means greater is A
+        ans = ["greater", "less"]
+    else: # this means greater is A
+        ans = ["less", "greater"]
+    if key1[0][6:7] == "A": # this means odd is A
+        ans1 = ["odd", "even"]
+    else: # this means greater is A
+        ans1 = ["even", "odd"]
+    # a dictonary to map tasks to responses
+    taskToResp = {"magnit": ans, "parity": ans1}
+    # list of the words:
+    words = taskToResp[tasks[0]] + taskToResp[tasks[1]]
+    # draw the canvas upon which the figure is built
+    img = Image.new("RGB", (w, h), color=background)
+    img1 = ImageDraw.Draw(img)
+    # draw the 4 shapes
+    img1.rectangle(frame_lx, fill= background, outline= "black")
+    img1.rectangle(frame_rx, fill= background, outline= "black")
+    img1.rectangle(cue_lx, fill= "black", outline= "black")
+    img1.rectangle(cue_rx, fill= "black", outline= "black")
+    # loop over the words:
+    for i in range(len(words)):
+        img1.text((x_coord[i] - 20, botRx_FrameRx[1] + 10), words[i],
+            fill="black", font=font, align="center"
+            )
+    #img.show()
+    figName = fig[0][22:26] + key[0][6:7] + key1[0][6:7]
+    img.save(cueDir + figName + ".png")
+    return figName
+
+
+# loop over the string list to build the different experiment versions having
+# different mappings
+for fig in figures:
+    for key in keys:
+        for key1 in keys1:
+            mappingsGuide(fig, key, key1, "")
 
 # build blocks, pseudorandomize them and paste them together
-def buildAndPasteBlocks(df0, df300, startCocoa):
+def buildAndPasteBlocks(df0, df300, startCocoa, fig, key, key1):
     # We want 3 exemplars for each kind of trial
     trialsPercondition = 3
     block0 = pd.concat([df0]*trialsPercondition, ignore_index = True)
@@ -215,19 +286,24 @@ def buildAndPasteBlocks(df0, df300, startCocoa):
         blocks = [block300, block0]*4
     else:
         print("startCocoa must be either int 0 or 300")
+    # prepare the experiment dataframe
     experiment = pd.DataFrame([], columns = block0.columns)
+    # loop over the list of blocks
     for i in range(len(blocks)):
         block = blocks[i]
         stimElmns = list(set(block.stimulus))
         cues = list(set(block.orientation))
-        #set block number
-        block.blockN = i
         #help(pseudorandomize)
         Stim_Cues = pseudorandomize(len(block), stimElmns, 1, *cues)
         #help(DfBooleanOrder)
         block_shuf = DfBooleanOrder(
             block, "stimulus", Stim_Cues.stim, "orientation", Stim_Cues.task
         )
+        #set block and trial number
+        block_shuf["blockN"] = i
+        block_shuf["trialN"] = list(range(len(block)))
+        # define the correct ANSWER
+        ANSWER(block_shuf, fig, key, key1)
         # append a interblock-break screen
         breakScreen = {
             "display": "break",
