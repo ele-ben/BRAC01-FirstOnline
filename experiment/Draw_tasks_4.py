@@ -165,9 +165,9 @@ def ANSWER(trainingShuf, fig, key, key1):
 # fig_dict = {"hori": "blackblackhori.png", "vert": "blackblackvert.png"}
 # keys = [[A, L], [L, A]]
 # keys1 = [[A, L], [L, A]]
-# fig = figures[0]
-# key = keys[0]
-# ke1 = keys1[0]
+# fig = figures[1]
+# key = keys[1]
+# key1 = keys1[1]
 
 def mappingsGuide(fig,  key, key1, imgDir):
     """Draw a mapping guide that visually describes cue-task and response-key
@@ -212,14 +212,14 @@ def mappingsGuide(fig,  key, key1, imgDir):
     lato_corto = 50
     lato_lungo = 20
     # define cues coordinate in the right frame
-    topLx_CueRx_hori = (topLx_FrameRx[0] + (lato/2 - lato_lungo/2), topLx_FrameRx[1] + 10)
-    botRx_CueRx_hori = (topLx_CueRx_hori[0] + lato_lungo, topLx_CueRx_hori[1] + lato_corto)
+    topLx_CueRx_vert = (topLx_FrameRx[0] + (lato/2 - lato_lungo/2), topLx_FrameRx[1] + 10)
+    botRx_CueRx_vert = (topLx_CueRx_vert[0] + lato_lungo, topLx_CueRx_vert[1] + lato_corto)
     # define cues coordinate in the left frame
-    topLx_CueLx_vert = (topLx_FrameLx[0] + (lato/2 - lato_corto/2), topLx_FrameLx[1] + 10)
-    botRx_CueLx_vert = (topLx_CueLx_vert[0] + lato_corto, topLx_CueLx_vert[1] + lato_lungo)
+    topLx_CueLx_hori = (topLx_FrameLx[0] + (lato/2 - lato_corto/2), topLx_FrameLx[1] + 10)
+    botRx_CueLx_hori = (topLx_CueLx_hori[0] + lato_corto, topLx_CueLx_hori[1] + lato_lungo)
     # ... save each into a "cue" object
-    cue_lx = [topLx_CueRx_hori, botRx_CueRx_hori]
-    cue_rx = [topLx_CueLx_vert, botRx_CueLx_vert]
+    cue_lx = [topLx_CueRx_vert, botRx_CueRx_vert]
+    cue_rx = [topLx_CueLx_hori, botRx_CueLx_hori]
     # save the cues in a list
     shapes = [frame_lx, cue_lx, frame_rx, cue_rx]
     # define the text info
@@ -230,7 +230,8 @@ def mappingsGuide(fig,  key, key1, imgDir):
         topLx_FrameRx[0], topLx_FrameRx[0] + lato
         ]
     # define where we should write what, based on the mapping
-    if fig[0] == "blackblackvert.png": # this means magnitude is vertical
+    if fig[0][22:26] == "hori": # this means magnitude is horizontal
+    # and so must be drawn on the leftward rectangle
         tasks = ["magnit", "parity"] # we first write the magnit responses
     else: # this means magnitude is hori and parity is vertical
         tasks = ["parity", "magnit"] # we first write the parity responses
@@ -299,7 +300,7 @@ def buildAndPasteBlocks(df0, df300, startCocoa, fig, key, key1):
         # append a interblock-break screen
         breakScreen = {
             "display": "break",
-            "breakMessage": "You have completed block " +str(i+1)+ " out of 8."
+            "breakMessage": "## You have completed block " +str(i+1)+ " out of 8."
             }
         block_shuf = block_shuf.append(breakScreen, ignore_index=True, sort = False)
         experiment = experiment.append(block_shuf, sort = False)

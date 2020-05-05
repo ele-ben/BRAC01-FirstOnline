@@ -14,8 +14,9 @@ imgDir = "img/"
 # spreadsheets names list - useful for scripting in Gorilla
 spreadsheetNames = []
 
-# Do (almost) the same operations for th e2 experiments
-for experiment in ["BRAC1", "BRAC2"]:
+# Do (almost) the same operations for the 2 experiments
+#for experiment in ["BRAC1", "BRAC2"]:
+for experiment in ["BRAC2"]:
     print(experiment)
 
     #-------- Instructions + training Trials
