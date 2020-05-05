@@ -5,11 +5,14 @@ import pandas as pd
 import csv
 # from funx_10 import orderStimWithinTasks_str as pseudorandomize
 # from funx_10 import DfBooleanOrder
-from Draw_tasks_4 import draw, drawStimuli, trainingTrials, ANSWER, buildAndPasteBlocks
+from Draw_tasks_4 import draw, drawStimuli, trainingTrials, ANSWER, buildAndPasteBlocks, mappingsGuide
 
 # project folders
 sheetDir = "spreadsheets/"
 imgDir = "img/"
+
+# spreadsheets names list - useful for scripting in Gorilla
+spreadsheetNames = []
 
 # Do (almost) the same operations for th e2 experiments
 for experiment in ["BRAC1", "BRAC2"]:
@@ -70,15 +73,15 @@ for experiment in ["BRAC1", "BRAC2"]:
                 trainingShuf = trainingTrials(imgDir)
                 # fill the right answer to training trials  given the current combination
                 ANSWER(trainingShuf, fig, key, key1)
-                print(trainingShuf[:3])
+                #print(trainingShuf[:3])
                 # add the start display as last row of training trials
                 startDisplay = {"display": "start"}
-                trainingShuf.append(startDisplay, ignore_index = True)
+                trainingShuf = trainingShuf.append(startDisplay, ignore_index = True)
 
                 # --------- Draw the "mappings Guide" ---------
 
-                #for orientation in ["hori", "vert"]:
-                #draw("black", "black", orientation, imgDf, imgDir)
+                # produce images with the mappings scheme
+                figName = mappingsGuide(fig, key, key1, imgDir)
 
                 # --------- Experimental blocks ---------
 
@@ -102,7 +105,21 @@ for experiment in ["BRAC1", "BRAC2"]:
                         [instructions, trainingShuf, experimentDf],
                         sort = False, ignore_index = True
                         )
+                    fullExperiment["mappingsGuide"] = figName
                     fileName = experiment + "_" + map + "_1st"+ str(startCocoa)
                     fullExperiment.to_csv(sheetDir + fileName +".csv", sep = ";")
+                    # for scripting in Gorilla, export spreadsheets names in some
+                    # convenient format
+                    spreadsheetNames.append(fileName)
 
-# draw(cuecolor, framecolor, orientation, imgDf, imgDir)
+# =============== After the 16 experiments are ready ===============
+
+# out of the loops, export the full list of spreadsheets names
+names = list(spreadsheetNames)
+jsObjects_array = []
+for n in names:
+    obj = "{ name: " + n +" , rows: any[] }"
+    jsObjects_array.append(obj)
+
+with open("spreadsheetNames.txt", "w") as outfile:
+    outfile.write(",\n".join(jsObjects_array))

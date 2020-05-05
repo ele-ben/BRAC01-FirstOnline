@@ -148,26 +148,26 @@ def ANSWER(trainingShuf, fig, key, key1):
     #print(trainingShuf[:4])
 
 
-magn =  "greater or less than 5."
-par = "odd or even."
-hori = "When the rectangle is horizontal, your task is to tell whether the number is "
-vert = "When the rectangle is vertical, your task is to tell whether the number is "
-greatM = "greater than 5."
-lessM = "less than 5."
-oddM = "odd."
-evenM = "even."
-A = "Press A to indicate "
-L = "Press L to indicate "
-size = "## "
-
-# fit the strings in convenient lists
-figures = [[hori, vert], [vert, hori]]
-fig_dict = {"hori": "blackblackhori.png", "vert": "blackblackvert.png"}
-keys = [[A, L], [L, A]]
-keys1 = [[A, L], [L, A]]
-fig = figures[0]
-key = keys[0]
-ke1 = keys1[0]
+# magn =  "greater or less than 5."
+# par = "odd or even."
+# hori = "When the rectangle is horizontal, your task is to tell whether the number is "
+# vert = "When the rectangle is vertical, your task is to tell whether the number is "
+# greatM = "greater than 5."
+# lessM = "less than 5."
+# oddM = "odd."
+# evenM = "even."
+# A = "Press A to indicate "
+# L = "Press L to indicate "
+# size = "## "
+#
+# # fit the strings in convenient lists
+# figures = [[hori, vert], [vert, hori]]
+# fig_dict = {"hori": "blackblackhori.png", "vert": "blackblackvert.png"}
+# keys = [[A, L], [L, A]]
+# keys1 = [[A, L], [L, A]]
+# fig = figures[0]
+# key = keys[0]
+# ke1 = keys1[0]
 
 def mappingsGuide(fig,  key, key1, imgDir):
     """Draw a mapping guide that visually describes cue-task and response-key
@@ -226,8 +226,8 @@ def mappingsGuide(fig,  key, key1, imgDir):
     font = ImageFont.truetype('arial.ttf', size=20)
     # define text x-coordinates for words indicating the 4 possible responses
     x_coord = [
-        topLx_FrameRx[0], topLx_FrameRx[0] + lato, topLx_FrameLx[0],
-        topLx_FrameLx[0] + lato
+        topLx_FrameLx[0], topLx_FrameLx[0] + lato,
+        topLx_FrameRx[0], topLx_FrameRx[0] + lato
         ]
     # define where we should write what, based on the mapping
     if fig[0] == "blackblackvert.png": # this means magnitude is vertical
@@ -260,17 +260,9 @@ def mappingsGuide(fig,  key, key1, imgDir):
             fill="black", font=font, align="center"
             )
     #img.show()
-    figName = fig[0][22:26] + key[0][6:7] + key1[0][6:7]
-    img.save(cueDir + figName + ".png")
+    figName = fig[0][22:26] + key[0][6:7] + key1[0][6:7] + ".png"
+    img.save(imgDir + figName)
     return figName
-
-
-# loop over the string list to build the different experiment versions having
-# different mappings
-for fig in figures:
-    for key in keys:
-        for key1 in keys1:
-            mappingsGuide(fig, key, key1, "")
 
 # build blocks, pseudorandomize them and paste them together
 def buildAndPasteBlocks(df0, df300, startCocoa, fig, key, key1):
