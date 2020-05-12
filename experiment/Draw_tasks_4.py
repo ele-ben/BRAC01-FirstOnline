@@ -274,9 +274,11 @@ def buildAndPasteBlocks(df0, df300, startCocoa, fig, key, key1):
     # define whether they have blocks 2,4,6,8 with cocoa = 0 and 1,3,5,7 with
     # cocoa 300 or viceersa
     if startCocoa == 0:
-        blocks = [block0, block300]*4
+        blocks = [block0, block300]*2
+        #blocks = [block0, block300]*4
     elif startCocoa == 300:
-        blocks = [block300, block0]*4
+        blocks = [block300, block0]*2
+        #blocks = [block300, block0]*4
     else:
         print("startCocoa must be either int 0 or 300")
     # prepare the experiment dataframe
@@ -300,7 +302,7 @@ def buildAndPasteBlocks(df0, df300, startCocoa, fig, key, key1):
         # append a interblock-break screen
         breakScreen = {
             "display": "break",
-            "breakMessage": "## You have completed block " +str(i+1)+ " out of 8."
+            "breakMessage": "## You have completed block " +str(i+1)+ " out of " + str(len(blocks)) + "."
             }
         block_shuf = block_shuf.append(breakScreen, ignore_index=True, sort = False)
         experiment = experiment.append(block_shuf, sort = False)
