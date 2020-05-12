@@ -1,10 +1,7 @@
 # Building Gorilla version of BRAC01 and BRAC02
 import sys
-sys.path.append(r'C:\Users\Elena\Documents\AA_PhD\PsychoPy\MyFunctions')
 import pandas as pd
 import csv
-# from funx_10 import orderStimWithinTasks_str as pseudorandomize
-# from funx_10 import DfBooleanOrder
 from Draw_tasks_4 import draw, drawStimuli, trainingTrials, ANSWER, buildAndPasteBlocks, mappingsGuide
 
 # project folders
@@ -15,8 +12,8 @@ imgDir = "img/"
 spreadsheetNames = []
 
 # Do (almost) the same operations for the 2 experiments
-#for experiment in ["BRAC1", "BRAC2"]:
-for experiment in ["BRAC2"]:
+for experiment in ["BRAC1", "BRAC2"]:
+#for experiment in ["BRAC2"]:
     print(experiment)
 
     #-------- Instructions + training Trials

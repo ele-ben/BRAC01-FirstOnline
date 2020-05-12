@@ -3,8 +3,8 @@ import pandas as pd
 from PIL import Image, ImageDraw, ImageFont
 from win32api import GetSystemMetrics
 import sys
+# indicate where the funx10 module is stored
 sys.path.append(r'C:\Users\Elena\Documents\AA_PhD\PsychoPy\MyFunctions')
-#from BRACfun import no_StimRepetition, shuffle_rows
 from funx_10 import shuffle_rows, noStimRepetition, DfBooleanOrder
 from funx_10 import orderStimWithinTasks_str as pseudorandomize
 
