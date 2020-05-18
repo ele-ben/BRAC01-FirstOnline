@@ -198,7 +198,7 @@ def mappingsGuide(fig,  key, key1, imgDir):
     imageSize = [lato, lato]
     spaceBetw = lato
     # define dimension of the image in pixels
-    w, h = imageSize[0]*2 + spaceBetw*3, imageSize[1]*2
+    w, h = imageSize[0]*2 + spaceBetw*3, 170
     # define coordinates for right frame
     topLx_FrameRx = (w - spaceBetw - lato, h/2 - lato/2)
     botRx_FrameRx = (topLx_FrameRx[0] + lato, h/2 + lato/2)
@@ -257,7 +257,7 @@ def mappingsGuide(fig,  key, key1, imgDir):
     img1.rectangle(cue_rx, fill= "black", outline= "black")
     # loop over the words:
     for i in range(len(words)):
-        img1.text((x_coord[i] - 20, botRx_FrameRx[1] + 10), words[i],
+        img1.text((x_coord[i] - 20, botRx_FrameRx[1] + 3), words[i],
             fill="black", font=font, align="center"
             )
     #img.show()
