@@ -3,6 +3,9 @@ Online Task switching cognitive psychology experiment with visual stimuli and ke
 .csv files and images are generated to be uploaded in Gorilla.
 Ptyhon
 
+IMPORTANT: it is necessary to download funx_10.py file from my functions-experiments repository
+For simplicity, put it in the same folder of Draw_tasks_4.py file.
+
 Here we build .csv files containing the information necessary to describe the
 sequence of trials and breaks of an experiment. Specifically, the main script
 generates 16 spreadsheets for experiment 1 and 16 for experiment 2, each representing
