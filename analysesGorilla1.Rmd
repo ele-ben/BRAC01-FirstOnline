@@ -17,12 +17,15 @@ library("readxl")
 select <- dplyr::select
 filter <- dplyr::filter
 
+# write the path to your project folder
 setwd('C://Users//Elena//Documents//AA_PhD//Projects//BRAC01_BRAC02//BRAC01-FirstOnline')
 
+# define paths to further subfolders in the project folders (create them first)
 dataDir = "data//"
 figDir = "figures//"
 tabDir = "tables//"
 
+# a .R file with custom functions - define the path to it if different from the working directory
 source("C://Users//Elena//Documents//AA_PhD//R//modelsFun.R")
 ```
 
@@ -68,7 +71,7 @@ demo20 <- demo20[c(1:nrow(demo20) - 1), ]
 
 # load experiment data
 exp = "18619-v2"
-version = "_1"
+version = "_2"
 file_extesion = ".csv"
 
 data2_files <- list.files(
@@ -212,7 +215,8 @@ Was everything fine?
 
 # loop over pps to check if some events happened 
 for (j in unique(d$pp)){
-  
+  screen_mess = ""
+  weird_duration_mess = ""
   #check & save mapping
   #print(d[d$pp == j & d$display == "Instructions", c("mappingsGuide", "greatMap", "oddMap", "magnMap")][1,])
   logbook_df[logbook_df == j, "mapping"] <- unique(d[d$pp == j, "counterbalance"])
@@ -232,7 +236,10 @@ for (j in unique(d$pp)){
   screenSize <- unique(d[d$pp == j, "ppViewportSize"])
   #w = strsplit(as.character(screenSize), 'x')[1]
   h = strsplit(as.character(screenSize), 'x')[[1]][2]
-  if (as.integer(h) < 648) {cat("pp ", j, " screen height was", h,"while the min necessary is 648.\n" )}
+  if (as.integer(h) < 578) {
+    cat("pp ", j, "screen height was", h,"while the min necessary is 578.\n" )
+    logbook_df[logbook_df == j, "message"] <- paste0("screen height was ", h," while the min necessary is 578")
+    }
   
   # how long did it take?
   begin <- as.POSIXct(as.character(d[d$pp == j & d$eventIndex == 1, "localDate"]),format="%d/%m/%Y %H:%M:%S")
@@ -269,9 +276,6 @@ DO NOT run
 #update logbook
 logbook_df[logbook_df$pp == "5a8e9c8ff1408d000176dae5", "remove"] <- 1
 logbook_df[logbook_df$pp == "5a8e9c8ff1408d000176dae5", "message"] <- "has had 697 weird cue durations"
-logbook_df[logbook_df$pp == "5a8e9c8ff1408d000176dae5", "message1"] <- "screen height was 625 while the min necessary is 648"
-
-logbook_df[logbook_df$pp == "5ecb79d954cc8832698d9025", "message"] <- "screen height was 598 while the min necessary is 648"
 
 #logbook_df$REAL_mapping <- unique(d$mappingsGuide)[2]
 #logbook_df$firstCocoa <- unique(d[d$blockNum == 0, "cocoa"])[2]
@@ -300,13 +304,12 @@ d[d$pp == j & d$rt == "LOADING DELAY", "display"]
 
 clean from non-response screens and non-experimental columns and add sequence relations
 ```{r}
-dclean <- d[(d$zoneName == "Zone1" | d$zoneName == "Zone3" | d$zoneName == "Zone4") & d$display == "trial",]
-dclean <- dclean[, c("pp", "counterbalance", "blockNum", "trialNum", "rt", "Response", "Attempt", "error", "Timed.Out", "ANSWER", "cuecolor", "framecolor", "task", "stimulus", "cocoa")]
+# keep zone 1 (no resp) and zone 3 and 4 (left an right resp) events of the trial part (no training)
+dclean <- d[(d$zoneName == "Zone1" | d$zoneName == "Zone3" | d$zoneName == "Zone4") & d$display == "trial", c("pp", "counterbalance", "blockNum", "trialNum", "rt", "Response", "Attempt", "error", "Timed.Out", "ANSWER", "cuecolor", "framecolor", "task", "stimulus", "cocoa")]
 
-# tests
+
+# Remove empty rows, but before printing how many are there. It happens only in xlsx files
 print(sum(is.na(dclean$pp)))
-
-# only for xlsx file, otherwise it doesn't matter to run it or not
 dclean <- dclean[!is.na(dclean$pp), ]
 
 # different colour column if BRAC1 or BRAC2
@@ -330,11 +333,41 @@ check performance
 ```{r}
 # seek for fast responses, errors and not answered trials
 
+remove_him <- function(j){
+  remove_yn <- readline(
+    prompt = paste("Do you want to reject participant", j, "? Type 1 for yes, 0 for no and press enter")
+    )
+  return(remove_yn)
+}
+
 for (j in unique(dclean$pp)){
-  if (sum(dclean$pp == j & dclean$rt < 200) > 38){cat("pp ", j, " did", sum(dclean$pp == j & dclean$rt < 200), "super fast resp \n")}
-  if (sum(dclean$pp == j & dclean$rt > 2000) > 38){cat("pp ", j, " did", sum(dclean$pp == j & dclean$rt > 2000), "very slow resp \n")}
-  if (sum(dclean$pp == j & dclean$error) > 38){cat("pp ", j, " did", sum(dclean$pp == j & dclean$error), "errors \n")}
-  if (sum(dclean$pp == j & dclean$Attempt == 1, na.rm = T) < 346){cat("pp ", j, " did not answer to", sum(is.na(dclean$pp == j & dclean$Attempt == 0)), "trials \n")}
+  # prepare empty strings to fill logbook
+  fast_mess = ""
+  slow_mess = ""
+  error_mess = ""
+  miss_mess = ""
+  remove_yn = 0
+  # check different perofrmance markers
+  if (sum(dclean$pp == j & dclean$rt < 200) > 38){
+    cat("pp ", j, " did", sum(dclean$pp == j & dclean$rt < 200), "super fast resp \n")
+    fast_mess = paste0("did ", sum(dclean$pp == j & dclean$rt < 200), " super fast responses; ")
+    }
+  if (sum(dclean$pp == j & dclean$rt > 2000) > 38){
+    cat("pp ", j, " did", sum(dclean$pp == j & dclean$rt > 2000), "very slow resp \n")
+    slow_mess = paste0("did ", sum(dclean$pp == j & dclean$rt > 2000), " very slow responses; ")
+    }
+  if (sum(dclean$pp == j & dclean$error) > 38){
+    cat("pp ", j, " did", sum(dclean$pp == j & dclean$error), "errors \n")
+    error_mess = paste0("did ", sum(dclean$pp == j & dclean$error), " errors; ")
+    }
+  if (sum(dclean$pp == j & dclean$Attempt == 1, na.rm = T) < 346){
+    cat("pp ", j, " did not answer to", sum(is.na(dclean$pp == j & dclean$Attempt == 0)), "trials \n")
+    miss_mess = paste0("did not answer to", sum(is.na(dclean$pp == j & dclean$Attempt == 0)), "trials; ")
+    }
+  logbook_df[logbook_df$pp == j, "message2"] <- paste0(fast_mess, slow_mess, error_mess, miss_mess)
+  if (logbook_df[logbook_df$pp == j, "message2"] != ""){
+    logbook_df[logbook_df$pp == j, "remove"] <- remove_him(j)
+    }
 }
 
 ```
@@ -343,15 +376,11 @@ for (j in unique(dclean$pp)){
 # update logbook
 
 logbook_df[logbook_df$pp == "5e91e5ba42eb130009d29588", "remove"] <- 1
-logbook_df[logbook_df$pp == "5e6bcd93fa0d9e02a29d9de7", "message2"] <- "did 86 errors"
 
 logbook_df[logbook_df$pp == "TO3", "remove"] <- 1
 logbook_df[logbook_df$pp == "TO3", "message2"] <- "for having already taken part in BRAC lab version"
 
- 
-logbook_df[logbook_df$pp == "NW8", "message2"] <- "did 42 very slow resp"
-logbook_df[logbook_df$pp == "5eb7624752ea80693d86b263 ", "message2"] <- "did 55 errors"
-logbook_df[logbook_df$pp == "GM4", "message2"] <- "did 69 errors"
+
 ```
 
 
@@ -370,7 +399,7 @@ write.csv2(logbook_toExp, paste0(tabDir, "logbook_old_BRAC1_RWTH.csv"))
 
 ```{r}
 logbook_df2 <- logbook_toExp
-logbook_df1 <- read.csv2(paste0(tabDir, "logbook_BRAC2_Pro_27-28-3.csv"))
+logbook_df <- read.csv2(paste0(tabDir, "logbook_BRAC2_Pro_27-28-3.csv"))
 #logbook_df0 <- read.csv2(paste0(tabDir, "logbook_old_BRAC1_Pro_05-26.csv"))
 
 #logbook_df1 <- logbook_df1[, c("pp", "remove", "mapping", "message","message2")]
