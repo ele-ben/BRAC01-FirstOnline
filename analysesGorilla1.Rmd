@@ -8,11 +8,13 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
-library("haven")
-library("dplyr")
-library("lme4")
-library("reshape2")
-library("readxl")
+# try if this works for your, otherwise load each package with the line below
+if(!require(pacman)) install.packages("pacman")
+pacman::p_load("haven", "dplyr", "lme4", "reshape2", "ggplot2", "wesanderson")
+
+# 2nd option if first doen's work
+# library("haven")
+# etc..
 
 select <- dplyr::select
 filter <- dplyr::filter
@@ -70,8 +72,8 @@ demo20 <- demo20[c(1:nrow(demo20) - 1), ]
 # For BRAC02
 
 # load experiment data
-exp = "18619-v2"
-version = "_2"
+exp = "17326-"
+version = "(.)*"
 file_extesion = ".csv"
 
 data2_files <- list.files(
@@ -80,20 +82,34 @@ data2_files <- list.files(
 
 # there's an empty column after breakmessage, donot know why
 # cut last row (empty)
-data_exp <- read.csv2(paste0(dataDir, data2_files[1]), sep = ";", fileEncoding="UTF-8-BOM")
+d <- read.csv2(paste0(dataDir, data2_files[1]), sep = ";", fileEncoding="UTF-8-BOM")
+d <- d[c(1:nrow(d) - 1), ]
+
+data_exp <- read.csv2(paste0(dataDir, data2_files[2]), sep = ";", fileEncoding="UTF-8-BOM")
 data_exp <- data_exp[c(1:nrow(data_exp) - 1), ]
 
+d <- rbind(d, data_exp) 
+length(unique(d$Participant.Public.ID))
 
 #load demographics data
 #version = "(.)+"
+# demo2_files <- list.files(
+#   dataDir, pattern = paste0("^d(.)+", exp ,"(.)+questionnaire-b579", version, file_extesion)
+#   )
+
 demo2_files <- list.files(
-  dataDir, pattern = paste0("^d(.)+", exp ,"(.)+questionnaire-b579", version, file_extesion)
+  dataDir, pattern = paste0("^d(.)+", exp ,"(.)+questionnaire(.)+", version, file_extesion)
   )
 
 #demo1 <- as.data.frame(read_excel(paste0(dataDir, demo1_files[1])))
 demo1 <- read.csv(paste0(dataDir, demo2_files[1]), sep = ";", fileEncoding="UTF-8-BOM")
 demo1 <- demo1[c(1:nrow(demo1) - 1), ]
 
+demoMara <- read.csv(paste0(dataDir, demo2_files[2]), sep = ";", fileEncoding="UTF-8-BOM")
+demoMara <- demoMara[c(1:nrow(demoMara) - 1), ]
+
+
+demomelt <- melt(demo, id.vars = c(1:30))
 
 
 # Combine datasets
@@ -108,8 +124,8 @@ demo1 <- demo1[c(1:nrow(demo1) - 1), ]
 # d_Brac01_pro <- rbind(d_Brac01_pro_new, data_old)
 # demo_Brac01_pro <- rbind(demo_Brac01_pro_new, demold)
 # 
-# write.csv2(d_Brac01_pro, paste0(dataDir, "data_B1Pro1_task-in6f_39pps.csv"))
-# write.csv2(demo_Brac01_pro, paste0(dataDir, "data_B1Pro1_questionnaire-89vf_39pps.csv"))
+#write.csv2(d, paste0(dataDir, "data_exp_18619-v2_task-me89_40pps.csv"))
+#write.csv2(demo, paste0(dataDir, "data_exp_18619-v2_questionnaire-b579_40pps.csv"))
 
 # since I've called the dataset d and the demographics dataset demo, I assign the dfs I want to work on to those names here.
 d <- data_exp
@@ -189,23 +205,23 @@ for (i in 1:(nrow(d)-1)) {
   else {d$timeTillNext[i] <- difftime(end, begin, units = "secs")}
 }
 
-# who took part?
-# if (length(grep("^BRAC1", unique(d$spreadsheet)[2])) == 1){
-#   write.csv2(as.data.frame(unique(d$pp)), paste0(tabDir, "BRAC1_publicIDs.csv"))
-# } else if (length(grep("^BRAC2", unique(d$spreadsheet)[2])) == 1){
-#   write.csv2(as.data.frame(unique(d$pp)), paste0(tabDir, "BRAC2_publicIDs.csv"))
-# }
 
 #}
 ```
 
 
 ```{r}
+# prepare some variables that will be filled in the chunk below
+
+# vector that collects duration of experiment for each pp. Then you can extract mean duration in minutes
 durations <- rep(0, length(unique(d$pp)))
-#d$logbook <- 0
+# create a df that will contain demogrphics and other info for each pp.
 logbook_df <- data.frame("pp" = unique(d$pp))
+# it also contains a column to signal if a pp is to remove (set to 0 - accapt - as default)
 logbook_df$remove <- 0
+# contains info about the counterbalance condition of each
 logbook_df$mapping <- ""
+# and a column for comments
 logbook_df$message <- ""
 ```
 
@@ -215,30 +231,39 @@ Was everything fine?
 
 # loop over pps to check if some events happened 
 for (j in unique(d$pp)){
+  
+  # preallocate empty strings that will be filled if sth went wrong
   screen_mess = ""
   weird_duration_mess = ""
+  
   #check & save mapping
   #print(d[d$pp == j & d$display == "Instructions", c("mappingsGuide", "greatMap", "oddMap", "magnMap")][1,])
-  logbook_df[logbook_df == j, "mapping"] <- unique(d[d$pp == j, "counterbalance"])
+  logbook_df[logbook_df$pp == j, "mapping"] <- unique(d[d$pp == j, "counterbalance"])
   
   # did she skip training?
   if (is.na(sum(d$pp == j & d$Response == "Start the training!", na.rm = T))){
-    cat("no training for pp", j, "\n")}
+    cat("no training for pp", j, "\n")
+    }
   
-  # did she re-read instr?
-  if (sum(d$pp == j & d$Response == "Re-read instructions", na.rm = T) != 0) {cat("pp ", j, "has read instructions more than once. \n")}
+  # did she re-read instructions?
+  if (sum(d$pp == j & d$Response == "Re-read instructions", na.rm = T) != 0) {cat("pp ", j, "has read instructions more than once. \n")
+    }
   
   # did she get to the end?
   if (unique(d$finalCheckpoint) != "demographics done" & unique(d$finalCheckpoint) != "after demographic"){
-    cat("pp ", j, " has not gotten to the end.\n" )}
+    cat("pp ", j, " has not gotten to the end.\n" )
+    }
   
   # did she have big enouhg screen?
   screenSize <- unique(d[d$pp == j, "ppViewportSize"])
   #w = strsplit(as.character(screenSize), 'x')[1]
+  # get screen height (the width shouldn't be a concern)
   h = strsplit(as.character(screenSize), 'x')[[1]][2]
+  # the minum is derived by some trials using gorilla preview and simultaneosly this website:
+  # https://whatismyviewport.com/
   if (as.integer(h) < 578) {
     cat("pp ", j, "screen height was", h,"while the min necessary is 578.\n" )
-    logbook_df[logbook_df == j, "message"] <- paste0("screen height was ", h," while the min necessary is 578")
+    screen_mess <- paste0("screen height was ", h," while the min necessary is 578;")
     }
   
   # how long did it take?
@@ -247,23 +272,41 @@ for (j in unique(d$pp)){
   end <- as.POSIXct(as.character(d[endRow, "localDate"]), format="%d/%m/%Y %H:%M:%S")
   duration <- difftime(end, begin, units = "mins")
   durations[which(unique(d$pp) == j)] <- duration
-  if (duration > 35 | duration < 14) {cat("pp ", j, " took", duration, "minutes to complete the experiment.\n")}
+  if (duration > 35 | duration < 14) {
+    cat("pp ", j, " took", duration, "minutes to complete the experiment.\n")
+    }
   
   # did she have some weird trials durations?
   if (sum(d$pp == j & d$zoneType == "fixation" & d$rt > 1410, na.rm = T) > 0) {
-    cat("pp ", j, " has had",  sum(d$pp == j & d$zoneType == "fixation" & d$rt > 1410, na.rm = T), "weird fixations durations \n\n")}
+    cat("pp", j, "has had",  sum(d$pp == j & d$zoneType == "fixation" & d$rt > 1410, na.rm = T), "weird fixations durations \n\n")
+    weird_duration_mess = paste(
+      "has had",  sum(d$pp == j & d$zoneType == "fixation" & d$rt > 1410, na.rm = T), "weird fixations durations;")
+    }
   
   if (sum(d$pp == j & d$zoneName == "advancementZone" & d$display == "trial" & d$rt > 310, na.rm = T) > 0) {
-    cat("pp ", j, " has had", sum(d$pp == j & d$zoneName == "advancementZone" & d$display == "trial" & d$rt > 310, na.rm = T), "weird cue durations \n\n")}
+    cat("pp ", j, "has had", sum(d$pp == j & d$zoneName == "advancementZone" & d$display == "trial" & d$rt > 310, na.rm = T), "weird cue durations \n\n")
+    weird_duration_mess = paste(
+      weird_duration_mess, "has had", sum(d$pp == j & d$zoneName == "advancementZone" & d$display == "trial" & d$rt > 310, na.rm = T), "weird cue durations;")
+    }
   
   # did she have a delay somewhere?
   load_delays <- sum(d$pp == j & d$rt == "LOADING DELAY", na.rm = T)
-  if (load_delays >0) {cat("pp ", j, " has had", load_delays, "loading delays.\n\n")}
+  if (load_delays >0) {cat("pp ", j, " has had", load_delays, "loading delays.\n\n")
+    }
   
   # did she left any comments?
   #if (!is.na(demo[demo$pp == j & demo$questionKey == "comment", "Response"])){
   if (demo[demo$pp == j & demo$questionKey == "comment", "Response"] != ""){
-  cat("pp ", j, "left a comment:", demo[demo$pp == j & demo$questionKey == "comment", "Response"], "\n\n")}
+  cat("pp ", j, "left a comment:", demo[demo$pp == j & demo$questionKey == "comment", "Response"], "\n\n")
+  }
+  
+  # fill the pp's logbook line with the info collected in the loop
+  logbook_df[logbook_df$pp == j, "message1"] <- paste0(screen_mess, weird_duration_mess)
+  # if there are info in the message column, ask if want ot keep the pp or not
+  if (logbook_df[logbook_df$pp == j, "message1"] != ""){
+    # the answer is written in the remove column
+    logbook_df[logbook_df$pp == j, "remove"] <- remove_him(j)
+  }
 }
 
 cat( "mean duration of the experiment was", mean(durations, na.rm = T), "minutes")
@@ -302,16 +345,20 @@ d[d$pp == "5a9bb11435237b0001129a35" & d$rt > 1410 & d$zoneType == "fixation" & 
 d[d$pp == j & d$rt == "LOADING DELAY", "display"]
 ```
 
-clean from non-response screens and non-experimental columns and add sequence relations
+clean from non-response screens and non-experimental columns and add sequence relations (rep or sw)
 ```{r}
+
 # keep zone 1 (no resp) and zone 3 and 4 (left an right resp) events of the trial part (no training)
-dclean <- d[(d$zoneName == "Zone1" | d$zoneName == "Zone3" | d$zoneName == "Zone4") & d$display == "trial", c("pp", "counterbalance", "blockNum", "trialNum", "rt", "Response", "Attempt", "error", "Timed.Out", "ANSWER", "cuecolor", "framecolor", "task", "stimulus", "cocoa")]
+dclean <- d[
+  (d$zoneName == "Zone1" | d$zoneName == "Zone3" | d$zoneName == "Zone4") & d$display == "trial", c("pp", "counterbalance", "blockNum", "trialNum", "rt", "Response", "Attempt", "error", "Timed.Out", "ANSWER", "cuecolor", "framecolor", "task", "stimulus", "cocoa")
+  ]
 
 
 # Remove empty rows, but before printing how many are there. It happens only in xlsx files
 print(sum(is.na(dclean$pp)))
 dclean <- dclean[!is.na(dclean$pp), ]
 
+# create a column to signal rep or sw for each relevant variable (task, response, context..)
 # different colour column if BRAC1 or BRAC2
 if (unique(dclean$framecolor)[1] == "black"){ 
   dclean <- sequence_relation(dclean, c("task", "ANSWER", "cuecolor"))
@@ -322,50 +369,52 @@ if (unique(dclean$framecolor)[1] == "black"){
 # sum(dclean[dclean$task_R == 99, "trialNum"]) == 0
 # sum(dclean$ANSWER_R == 99) == length(unique(dclean$pp))*length(unique(dclean$blockNum))
 
+# create a column to signal post-errors trials
 dclean <- sequence_relation(dclean, "error", type = "error")
 
 #d <- dclean
 # DELETE PP TO3 from BRAC1 old!!! #########################################################################################
-# DELETE PP SN4 from BRAC2!!!
+# DELETE PP SN4 from BRAC1 new!!!
 ```
 
 check performance
 ```{r}
 # seek for fast responses, errors and not answered trials
 
-remove_him <- function(j){
-  remove_yn <- readline(
-    prompt = paste("Do you want to reject participant", j, "? Type 1 for yes, 0 for no and press enter")
-    )
-  return(remove_yn)
-}
-
 for (j in unique(dclean$pp)){
+  
   # prepare empty strings to fill logbook
   fast_mess = ""
   slow_mess = ""
   error_mess = ""
   miss_mess = ""
-  remove_yn = 0
+  
   # check different perofrmance markers
+  # how many faster than 200 ms repsonses?
   if (sum(dclean$pp == j & dclean$rt < 200) > 38){
     cat("pp ", j, " did", sum(dclean$pp == j & dclean$rt < 200), "super fast resp \n")
     fast_mess = paste0("did ", sum(dclean$pp == j & dclean$rt < 200), " super fast responses; ")
-    }
+  }
+  # how many slower than 2000 ms repsonses?
   if (sum(dclean$pp == j & dclean$rt > 2000) > 38){
     cat("pp ", j, " did", sum(dclean$pp == j & dclean$rt > 2000), "very slow resp \n")
     slow_mess = paste0("did ", sum(dclean$pp == j & dclean$rt > 2000), " very slow responses; ")
-    }
+  }
+  # how many errors?
   if (sum(dclean$pp == j & dclean$error) > 38){
     cat("pp ", j, " did", sum(dclean$pp == j & dclean$error), "errors \n")
     error_mess = paste0("did ", sum(dclean$pp == j & dclean$error), " errors; ")
-    }
+  }
+  # how many misses?
   if (sum(dclean$pp == j & dclean$Attempt == 1, na.rm = T) < 346){
     cat("pp ", j, " did not answer to", sum(is.na(dclean$pp == j & dclean$Attempt == 0)), "trials \n")
     miss_mess = paste0("did not answer to", sum(is.na(dclean$pp == j & dclean$Attempt == 0)), "trials; ")
-    }
+  }
+  
+  # fill-in the logbook
   logbook_df[logbook_df$pp == j, "message2"] <- paste0(fast_mess, slow_mess, error_mess, miss_mess)
-  if (logbook_df[logbook_df$pp == j, "message2"] != ""){
+  # prompt the user with the remove qestion, only if the message2 is full and the remove is not 1 already!
+  if (logbook_df[logbook_df$pp == j, "message2"] != "" & logbook_df[logbook_df$pp == j, "remove"] == 0){
     logbook_df[logbook_df$pp == j, "remove"] <- remove_him(j)
     }
 }
@@ -375,26 +424,40 @@ for (j in unique(dclean$pp)){
 ```{r}
 # update logbook
 
-logbook_df[logbook_df$pp == "5e91e5ba42eb130009d29588", "remove"] <- 1
+logbook_df[logbook_df$pp == "5d1cfc4ee950480015366f7b", "remove"] <- 0
 
-logbook_df[logbook_df$pp == "TO3", "remove"] <- 1
+logbook_df[logbook_df$pp == "SF9", "remove"] <- 0
 logbook_df[logbook_df$pp == "TO3", "message2"] <- "for having already taken part in BRAC lab version"
-
 
 ```
 
 
-Demographics
+Demographics - draw the interesting info and merge them with logbook
 ```{r}
+# select the columns
 demotemp <- demo[, c("pp", "questionKey", "Response")]
+# transfrom the dataset from long to wide
 demotemp1 <- dcast(demotemp, pp ~ questionKey, value.var = "Response")
+# select only some of the answers (many are redudant)
 demotemp1 <- demotemp1[, c("pp", "age", "sex", "country", "education", "response-2", "response-3","psyKnowledge", "comment")]
+# change columns names to clearer names
+names(demotemp1)[which(names(demotemp1) == "response-2")] <- "handedness"
+names(demotemp1)[which(names(demotemp1) == "response-3")] <- "motherTongue"
+# remove na if there are
 demotemp1 <- demotemp1[!is.na(demotemp1$pp),]
 
-#logbook_df <- read.csv2(paste0(tabDir, "logbook_old_BRAC1_Pro_05-26.csv"))
+names(demoMara)[names(demoMara) == "Participant.Public.ID"] <- "pp"
+names(demoMara)[which(names(demoMara) == "response.2")] <- "handedness"
+names(demoMara)[which(names(demoMara) == "response.3")] <- "motherTongue"
+demoMara <- demoMara[,c("pp", "age", "sex", "country", "education", "handedness", "motherTongue","psyKnowledge", "comment")]
+
+demotemp1 <- rbind(demotemp1, demoMara)
+
+# merge this demo dataframe with the logbook, matching the rows by pp ID
 logbook_toExp <- merge(logbook_df, demotemp1, by = "pp")
 
-write.csv2(logbook_toExp, paste0(tabDir, "logbook_old_BRAC1_RWTH.csv"))
+# save this dataframe for future inspections
+write.csv2(logbook_toExp, paste0(tabDir, "logbook_BRAC2_RWTH1.csv"))
 ```
 
 ```{r}
@@ -433,12 +496,14 @@ write.csv2(logbook_df, paste0(tabDir, "logbook_BRAC2_Pro_27-28-3.csv"))
 # remove pps that were individuated to have performed very badly (or twice)
 
 pps2remove <- logbook_toExp[logbook_toExp$remove == 1, "pp"]
+cat("You're about to remove", length(pps2remove), "participants")
 for (ppRem in pps2remove){
   print(ppRem)
   dclean <- dclean[!dclean$pp == ppRem, ]
 }
 
-write.csv2(dclean, paste0(dataDir, "B1_RWTH_horiAA.csv"))
+# save the dataset ready for the analyses
+write.csv2(dclean, paste0(dataDir, "B2_RWTH1.csv"))
 ```
 
 
@@ -457,11 +522,23 @@ sum(mapps$count)
 sum(mapps$incl_remove)
 ```
 
+Define nice colours for graphs
+```{r}
+#nice colours
+azzurro <- wes_palette("Darjeeling1")[5]
+azzurroScuro <- wes_palette("Zissou1")[1]
+ocra <- wes_palette("Darjeeling1")[3]
+grigioVerde <- wes_palette("Darjeeling1")[2]
+rosaScuro <- wes_palette("GrandBudapest1")[2]
+lilla <-  wes_palette("IsleofDogs1")[1]
+```
+
 
 
 some vizs for errors
 ```{r vizs for errors}
 
+d <- dclean
 d <- d[!d$rt < 200,]
 d$pp <- as.factor(d$pp)
 
@@ -477,8 +554,12 @@ condtns <- group_my(global, meanerror, task)
 print("these pp have meanER > 0.05: ")
 select(filter(pps, meanmeanerror > 0.05), pp)
 
+print("these pp have meanER > 0.1: ")
+select(filter(pps, meanmeanerror > 0.1), pp)
+
 
 #graph error distribution
+pd = position_dodge(0.7)
 png("figures//ErrorAcrPps.png", width = 1500, height = 700, res = 200)
 ggplot(pps, aes(x= pp, y = meanmeanerror, fill = pp)) +
   geom_col(width = 0.7, color = "black", position = pd, fill = azzurro) +
@@ -486,7 +567,7 @@ ggplot(pps, aes(x= pp, y = meanmeanerror, fill = pp)) +
   theme_bw() +
   theme(axis.title = element_text(face = "bold")) +
   ylab("Mean error rate")+
-  xlab("participant number") 
+  xlab("participant public ID") 
   #+ facet_wrap(~correctResp)
 dev.off()
 
