@@ -149,9 +149,27 @@ anova(modEmpty, modEmpty1)
 ```
 
 
-```{r}
+```{r model on logRTs}
 mod1 <- lmer(logRT ~ task_R*ANSWER_R*cuecolor_R*cocoa + (1|pp), data= drt, REML=F)
 summ <- summary(mod1)
 write.csv2(write_pvalues(mod1, "exp"), file= paste0(tabDir, "mod1", ".csv"))
+```
+
+```{r logit on errors}
+
+modeEmpty <- glmer(error ~ 1 + (1|pp), family="binomial", 
+                   control = glmerControl(optimizer="bobyqa"), data= de )
+summary(modeEmpty)
+
+modeEmpty1 <- glmer(error ~ 1 + (1|pp) + (1|stimulus), family="binomial", 
+                   control = glmerControl(optimizer="bobyqa"), data= de )
+summary(modeEmpty1)
+
+modLog <- glm(error ~ 1, family="binomial", data= de)
+summary(modLog)
+
+# same
+anova(modLog, modeEmpty)
+
 ```
 
