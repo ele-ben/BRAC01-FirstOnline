@@ -28,7 +28,7 @@ figDir = "figures//"
 tabDir = "tables//"
 
 # a .R file with custom functions - define the path to it if different from the working directory
-source("C://Users//Elena//Documents//AA_PhD//R//modelsFun.R")
+source("C://Users//Elena//Documents//AA_PhD//Projects//expra2020_faces//modelsFun.R")
 ```
 
 load data
@@ -457,7 +457,7 @@ demotemp1 <- rbind(demotemp1, demoMara)
 logbook_toExp <- merge(logbook_df, demotemp1, by = "pp")
 
 # save this dataframe for future inspections
-write.csv2(logbook_toExp, paste0(tabDir, "logbook_BRAC2_RWTH1.csv"))
+write.csv2(logbook_toExp, paste0(tabDir, ".csv"))
 ```
 
 ```{r}
