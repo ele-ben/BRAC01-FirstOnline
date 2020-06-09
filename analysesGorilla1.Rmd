@@ -443,6 +443,10 @@ demotemp1 <- demotemp1[, c("pp", "age", "sex", "country", "education", "response
 # change columns names to clearer names
 names(demotemp1)[which(names(demotemp1) == "response-2")] <- "handedness"
 names(demotemp1)[which(names(demotemp1) == "response-3")] <- "motherTongue"
+
+# change values of pps-typed-in answers, like poland and Poland
+#...
+
 # remove na if there are
 demotemp1 <- demotemp1[!is.na(demotemp1$pp),]
 
@@ -457,7 +461,7 @@ demotemp1 <- rbind(demotemp1, demoMara)
 logbook_toExp <- merge(logbook_df, demotemp1, by = "pp")
 
 # save this dataframe for future inspections
-write.csv2(logbook_toExp, paste0(tabDir, ".csv"))
+write.csv2(logbook_toExp, paste0(tabDir, ".csv"), row.names=FALSE)
 ```
 
 ```{r}
@@ -489,7 +493,7 @@ for (j in unique(demo$pp)){
   
 }
 
-write.csv2(logbook_df, paste0(tabDir, "logbook_BRAC2_Pro_27-28-3.csv"))
+write.csv2(logbook_df, paste0(tabDir, "logbook_BRAC2_Pro_27-28-3.csv"), row.names=FALSE)
 ```
 
 ```{r}
@@ -502,8 +506,23 @@ for (ppRem in pps2remove){
   dclean <- dclean[!dclean$pp == ppRem, ]
 }
 
+# add demogrpahics variables to the dataset
+for (j in unique(dclean$pp)){
+  dclean[dclean$pp == j, "age"] <- demo[demo$pp == j, "age"]
+  dclean[dclean$pp == j, "sex"]  <- demo[demo$pp == j, "sex"]
+  dclean[dclean$pp == j, "psyKnowledge"]  <- demo[demo$pp == j, "psyKnowledge"]
+  dclean[dclean$pp == j, "education"] <- demo[demo$pp == j, "education"]
+  dclean[dclean$pp == j, "handedness"]  <- demo[demo$pp == j, "handedness"]
+  dclean[dclean$pp == j, "motherTongue"]  <- demo[demo$pp == j, "motherTongue"]
+  dclean[dclean$pp == j, "country"] <- demo[demo$pp == j, "country"]
+}
+
+for (p in c("GM4", "LU1", "LY8", "NE3", "NW8", "TO3", "UG7", "WI5", "XL2", "YF1", "5896f9951a06b50001a7ff12", "5b1fc3ae325d600001c03dcb", "5d5bcd6c0802ee001608c5a8", "5e4a932344498f4e361fee0d", "5ec3dd4a21dd590667039a02")){
+  dclean[dclean$pp == p, "counterbalance"] <- "horiAA_1st300"
+}
+
 # save the dataset ready for the analyses
-write.csv2(dclean, paste0(dataDir, "B2_RWTH1.csv"))
+write.csv2(dclean, paste0(dataDir, "B2_RWTH1.csv"), row.names=FALSE)
 ```
 
 
