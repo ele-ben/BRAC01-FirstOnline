@@ -47,34 +47,34 @@ for experiment in ["BRAC2"]:
 
                 # -------- Instructions + training Trials --------
 
-                # preallocate instructions df
-                # instructions = pd.DataFrame([], columns = ["display", "magnMap",
-                # "parMap", "greatMap", "lessMap", "oddMap", "evenMap", "firstFig",
-                #  "secondFig"])
-                #
-                # # build the instructions row with the current combination
-                # row = {
-                #     "display": "Instructions", "magnMap": size + fig[0] + magn,
-                #     "parMap": size + fig[1] + par,
-                #     "greatMap":size + key[0] + greatM,
-                #     "lessMap": size + key[1]+ lessM,
-                #     "oddMap": size + key1[0] + oddM,
-                #     "evenMap": size + key1[1] + evenM,
-                #     "firstFig": fig_dict[fig[0][22:26]],
-                #     "secondFig": fig_dict[fig[1][22:26]]
-                #     }
-                # # fill the 1-row instructions-df
-                # instructions = instructions.append(row, ignore_index = True)
-                # # generate a string to "name" the current mapping
-                # map = fig[0][22:26] + key[0][6:7] + key1[0][6:7]
-                # # generate traning trials
-                # trainingShuf = trainingTrials(imgDir)
-                # # fill the right answer to training trials  given the current combination
-                # ANSWER(trainingShuf, fig, key, key1)
-                # #print(trainingShuf[:3])
-                # # add the start display as last row of training trials
-                # startDisplay = {"display": "start"}
-                # trainingShuf = trainingShuf.append(startDisplay, ignore_index = True)
+                preallocate instructions df
+                instructions = pd.DataFrame([], columns = ["display", "magnMap",
+                "parMap", "greatMap", "lessMap", "oddMap", "evenMap", "firstFig",
+                 "secondFig"])
+
+                # build the instructions row with the current combination
+                row = {
+                    "display": "Instructions", "magnMap": size + fig[0] + magn,
+                    "parMap": size + fig[1] + par,
+                    "greatMap":size + key[0] + greatM,
+                    "lessMap": size + key[1]+ lessM,
+                    "oddMap": size + key1[0] + oddM,
+                    "evenMap": size + key1[1] + evenM,
+                    "firstFig": fig_dict[fig[0][22:26]],
+                    "secondFig": fig_dict[fig[1][22:26]]
+                    }
+                # fill the 1-row instructions-df
+                instructions = instructions.append(row, ignore_index = True)
+                # generate a string to "name" the current mapping
+                map = fig[0][22:26] + key[0][6:7] + key1[0][6:7]
+                # generate traning trials
+                trainingShuf = trainingTrials(imgDir)
+                # fill the right answer to training trials  given the current combination
+                ANSWER(trainingShuf, fig, key, key1)
+                #print(trainingShuf[:3])
+                # add the start display as last row of training trials
+                startDisplay = {"display": "start"}
+                trainingShuf = trainingShuf.append(startDisplay, ignore_index = True)
 
                 # --------- Draw the "mappings Guide" ---------
 
@@ -83,41 +83,41 @@ for experiment in ["BRAC2"]:
 
                 # --------- Experimental blocks ---------
 
-#                 # Draw the stimuli and save them in img folder
-#                 # Crate dataframes with all possible kind of trials
-#                 df0_df300 = drawStimuli(experiment, imgDir)
-#                 # save these basic dfs with cocoa = 0 and = 300 separately
-#                 df0 = df0_df300[0]
-#                 df300 = df0_df300[1]
-#                 # Pseudo randomize  experimental blocks and pile 8 of them up:
-#                 # Create a sequence of 8 block starting with cocoa = 0 and one starting with
-#                 # cocoa = 300
-#                 for startCocoa in [0, 300]:
-#                     print(startCocoa)
-#                     # multiply the basic dfs to create a block, randomize, pile up
-#                     experimentDf = buildAndPasteBlocks(
-#                         df0, df300, startCocoa, fig, key, key1
-#                         )
-#                     # concatenate instructions, training block, experimental blocks
-#                     fullExperiment = pd.concat(
-#                         [instructions, trainingShuf, experimentDf],
-#                         sort = False, ignore_index = True
-#                         )
-#                     fullExperiment["mappingsGuide"] = figName
-#                     fileName = experiment + "_" + map + "_1st"+ str(startCocoa)
-#                     fullExperiment.to_csv(sheetDir + fileName +".csv", sep = ";")
-#                     # for scripting in Gorilla, export spreadsheets names in some
-#                     # convenient format
-#                     spreadsheetNames.append(fileName)
-#
-# # =============== After the 16 experiments are ready ===============
-#
-# # out of the loops, export the full list of spreadsheets names
-# names = list(spreadsheetNames)
-# jsObjects_array = []
-# for n in names:
-#     obj = "{ name: " + n +" , rows: any[] }"
-#     jsObjects_array.append(obj)
-#
-# with open("spreadsheetNames.txt", "w") as outfile:
-#     outfile.write(",\n".join(jsObjects_array))
+                # Draw the stimuli and save them in img folder
+                # Crate dataframes with all possible kind of trials
+                df0_df300 = drawStimuli(experiment, imgDir)
+                # save these basic dfs with cocoa = 0 and = 300 separately
+                df0 = df0_df300[0]
+                df300 = df0_df300[1]
+                # Pseudo randomize  experimental blocks and pile 8 of them up:
+                # Create a sequence of 8 block starting with cocoa = 0 and one starting with
+                # cocoa = 300
+                for startCocoa in [0, 300]:
+                    print(startCocoa)
+                    # multiply the basic dfs to create a block, randomize, pile up
+                    experimentDf = buildAndPasteBlocks(
+                        df0, df300, startCocoa, fig, key, key1
+                        )
+                    # concatenate instructions, training block, experimental blocks
+                    fullExperiment = pd.concat(
+                        [instructions, trainingShuf, experimentDf],
+                        sort = False, ignore_index = True
+                        )
+                    fullExperiment["mappingsGuide"] = figName
+                    fileName = experiment + "_" + map + "_1st"+ str(startCocoa)
+                    fullExperiment.to_csv(sheetDir + fileName +".csv", sep = ";")
+                    # for scripting in Gorilla, export spreadsheets names in some
+                    # convenient format
+                    spreadsheetNames.append(fileName)
+
+# =============== After the 16 experiments are ready ===============
+
+# out of the loops, export the full list of spreadsheets names
+names = list(spreadsheetNames)
+jsObjects_array = []
+for n in names:
+    obj = "{ name: " + n +" , rows: any[] }"
+    jsObjects_array.append(obj)
+
+with open("spreadsheetNames.txt", "w") as outfile:
+    outfile.write(",\n".join(jsObjects_array))
