@@ -29,8 +29,14 @@ source("C://Users//Elena//Documents//AA_PhD//Projects//expra2020_faces//modelsFu
 ```{r load data}
 d1 <- read.csv(paste0(dataDir, "B1_43pps", ".csv"), sep = ";", dec = ",")
 d1$exp <- "BRAC1"
+d1$map_horiAA300 <- 0
+d1$map_horiAA300[d1$counterbalance == "horiAA_1st300"] <- 1
 d2 <- read.csv(paste0(dataDir, "B2_43pps", ".csv"), sep = ";", dec = ",")
+d2$map_horiAA300 <- 0
+d2$map_horiAA300[d2$counterbalance == "BRAC2_horiAA_1st300"] <- 1
 d2$exp <- "BRAC2"
+
+
 
 names(d2)[names(d2) == "framecolor_R"] <- "context_R"
 names(d1)[names(d1) == "cuecolor_R"] <- "context_R"
@@ -60,27 +66,19 @@ d <- rbind(d1, d2)
 # }
 # 
 # 
-# # detect if it's brac01 or brac02 from the colour of frame and cue
-# if (unique(d$framecolor)[1] == "black"){
-#   B = "B1"
-#   context = "cuecolor"
-#   context_R = "cuecolor_R"
-#   } else if (unique(d$cuecolor)[1] == "black"){ 
-#   B = "B2"  
-#   context = "framecolor"
-#   context_R = "framecolor_R"
-#   }
+
 # 
 # for (p in c("GM4", "LU1", "LY8", "NE3", "NW8", "TO3", "UG7", "WI5", "XL2", "YF1", "5896f9951a06b50001a7ff12", "5b1fc3ae325d600001c03dcb", "5d5bcd6c0802ee001608c5a8", "5e4a932344498f4e361fee0d", "5ec3dd4a21dd590667039a02")){
 #   d[d$pp == p, "counterbalance"] <- "horiAA_1st300"
 # }
 # 
 # d <- d[,-1] 
-
+#d <- d2
 # adjust class of variables
 d$task_R <- as.factor(d$task_R)
 d$ANSWER_R <- as.factor(d$ANSWER_R)
 d[[context_R]] <- as.factor(d[[context_R]])
+d$context_R <- as.factor(d$context_R)
 d$Attempt <- as.factor(d$Attempt)
 d$cocoa <- as.factor(d$cocoa)
 d$counterbalance <- as.factor(d$counterbalance)
@@ -92,14 +90,99 @@ d$handedness <- as.factor(d$handedness)
 d$motherTongue <- as.factor(d$motherTongue)
 d$country <- as.factor(d$country)
 d$prolific <- as.factor(d$prolific)
+d$map_horiAA300 <- as.factor(d$map_horiAA300)
 
 #write.csv2(d, paste0(dataDir, "B2_43pps.csv"), row.names=FALSE)
+
 ```
 
-```{r descriptives}
+```{r}
+#table(d$country)
 
-d$age[is.na(d$age)] <- mean(d$age, na.rm = T)
-sum(is.na(d$age))
+d$country[d$country == "Wales"] <- "United Kingdom"
+d$country[d$country == "England"] <- "United Kingdom"
+d$country[d$country == "English"] <- "United Kingdom"
+d$country[d$country == "Northern Ireland"] <- "United Kingdom"
+d$country[d$country == "germany"] <- "Germany"
+d$country[d$country == "italy"] <- "Italy"
+d$country[d$country == "Netherlands"] <- "The Netherlands"
+d$country[d$country == "poland"] <- "Poland"
+d$country[d$country == "Portual"] <- "Portugal"
+d$country[d$country == "España"] <- "Spain"
+d$country[d$country == "United States"] <- "USA"
+
+#table(d$motherTongue)
+
+d$motherTongue[d$motherTongue == "english"] <- "English"
+d$motherTongue[d$motherTongue == "german"] <- "German"
+d$motherTongue[d$motherTongue == "german"] <- "German"
+d$motherTongue[d$motherTongue == "italian"] <- "Italian"
+d$motherTongue[d$motherTongue == "Hungary"] <- "Hungarian"
+d$motherTongue[d$motherTongue == "polish"] <- "Polish"
+d$motherTongue[d$motherTongue == "portuguese"] <- "Portuguese"
+d$motherTongue[d$motherTongue == "Portuguese (PT)"] <- "Portuguese"
+
+```
+
+
+```{r fix age missing values}
+
+# estimate age using other demographics - use this to replace missing ages
+
+# estimate model
+modAge <- lm(age ~ prolific + sex + psyKnowledge + education + country, data = d)
+#summary(modAge)
+# predict values
+d$predictedAge <- predict.lm(modAge, d)
+# substitute na with the predicted - leave the other unchanged
+noAgepps <- unique(d[is.na(d$age), "pp"])
+for (j in noAgepps){
+  d[d$pp == j, "age"] <- d[d$pp == j, "predictedAge"]
+}
+
+```
+
+```{r}
+#d <- d[d$exp == "BRAC2",]
+# detect if it's brac01 or brac02 from the colour of frame and cue
+if (length(unique(d$framecolor)) == 3){
+  B = "B1B2"
+  } else if (unique(d$framecolor)[1] == "black"){
+  B = "B1"
+  context = "cuecolor"
+  context_R = "cuecolor_R"
+  } else if (unique(d$cuecolor)[1] == "black"){
+  B = "B2"
+  context = "framecolor"
+  context_R = "framecolor_R"
+  }
+print(B)
+```
+
+```{r different datsets versions}
+# create a column useful afterwards
+d$respRepetitions <- 0
+
+# dataset clening for rts analyses
+drt <- d[(d$task_R != 99 & d$rt > 200 & !is.na(d$Attempt == 1)),]
+drt <- drt[!(drt$error == 1 | drt$error_R == 1),]
+
+drt$logRT <- log(drt$rt)
+
+for (j in unique(drt$pp)){
+  drt[drt$pp == j, "respRepetitions"] <- sum(drt$pp == j & drt$ANSWER_R == 0)
+}
+
+# dataset cleaing for error analyses
+de <- d[d$task_R != 99 & d$rt > 200,]
+
+# count resp repetitions
+for (j in unique(de$pp)){
+  de[de$pp == j, "respRepetitions"] <- sum(de$pp == j & de$ANSWER_R == 0)
+}
+
+drt$respRepetitions <- as.numeric(drt$respRepetition)
+de$respRepetitions <- as.numeric(de$respRepetition)
 ```
 
 
@@ -135,17 +218,17 @@ dev.off()
 ```
 
 ```{r RT vizs}
-
-drt <- d[(d$task_R != 99 & d$rt > 200 & !is.na(d$Attempt == 1)),]
-drt <- drt[!(drt$error == 1 | drt$error_R == 1),]
+# drt is the datset
 
 # average RTs per condition - relevant variables 
 if (B == "B1"){
   glblRel <- group_my(drt, rt, pp, task_R, ANSWER_R, cuecolor_R, cocoa)
   condtnsRel <- group_my(glblRel, meanrt, cuecolor_R, ANSWER_R, task_R, cocoa)
   } else if (B == "B2"){
-  glblRel <- group_my(drt, rt, pp, task_R, ANSWER_R, framecolor_R, cocoa)
-  condtnsRel <- group_my(glblRel, meanrt, framecolor_R, ANSWER_R, task_R, cocoa)
+    glblRel <- group_my(drt, logRT, pp, task_R, ANSWER_R, context_R, cocoa)
+    condtnsRel <- group_my(glblRel, meanlogRT, context_R, ANSWER_R, task_R, cocoa)
+  #glblRel <- group_my(drt, rt, pp, task_R, ANSWER_R, framecolor_R, cocoa)
+  #condtnsRel <- group_my(glblRel, meanrt, framecolor_R, ANSWER_R, task_R, cocoa)
   }
 
 #write.csv2(condtnsRel, paste(tabDir, "rtFigValues.csv", sep = ""))
@@ -153,22 +236,22 @@ if (B == "B1"){
 # barplot
 pd = position_dodge(.7)
 png(paste0(figDir, B, "_rts", ".png"), width = 1200, height = 1000, res = 200)
-ggplot(condtnsRel, aes(x= task_R, y = meanmeanrt, fill = ANSWER_R)) +
+ggplot(condtnsRel, aes(x= task_R, y = meanmeanlogRT, fill = ANSWER_R)) +
   geom_col(width = 0.7, color = "black", position = pd) +
-  geom_errorbar(aes(ymin  = meanmeanrt - se, ymax  = meanmeanrt + se), width = 0.3, size  = 0.7, position = pd,color = "black") +
+  geom_errorbar(aes(ymin  = meanmeanlogRT - se, ymax  = meanmeanlogRT + se), width = 0.3, size  = 0.7, position = pd,color = "black") +
   theme_bw() +
   theme(axis.title = element_text(face = "bold")) +
-  coord_cartesian(ylim=c(600,950)) +
+  coord_cartesian(ylim=c(6.25,6.75)) +
   ylab("Mean RTs") +
   xlab("Task sequence") +
-  if (B == "B1"){facet_wrap(~cuecolor_R + cocoa)} else if (B== "B2"){facet_wrap(~framecolor_R + cocoa)}
+  if (B == "B1"){facet_wrap(~cuecolor_R + cocoa)
+  } else if (B== "B2"){facet_wrap(~framecolor_R + cocoa)
+      }else{facet_wrap(~context_R + cocoa)}
 dev.off()
 
 ```
 
 ```{r error vizs}
-
-de <- d[d$task_R != 99 & d$rt > 200,]
 
 # average RTs per condition - relevant variables
 if (B == "B1"){
@@ -177,6 +260,10 @@ if (B == "B1"){
   } else if (B == "B2"){
   glblRel <- group_my(de, error, pp, task_R, ANSWER_R, framecolor_R, cocoa)
   condtnsRel <- group_my(glblRel, meanerror, framecolor_R, ANSWER_R, task_R, cocoa)
+  } else {
+  glblRel <- group_my(de, error, pp, task_R, ANSWER_R, context_R, cocoa)
+  condtnsRel <- group_my(glblRel, meanerror, context_R, ANSWER_R, task_R, cocoa)
+  pps <- group_my(glblRel, meanerror, pp)
   }
 
 #write.csv2(condtnsRel, paste(tabDir, "errorFigValues.csv", sep = ""))
@@ -205,7 +292,7 @@ hist(drt$rt, freq= F, col=45, main = "", xlab= "RTs values")
 # abline(v= mean(drt$rt) - 2*sd(drt$rt), col= "darkblue", lwd= 1)
 curve(dnorm(x, mean(drt$rt), sd(drt$rt)), add= T, col= 2, lwd= 2)
 
-drt$logRT <- log(drt$rt)
+# try log
 
 # much better
 hist(drt$logRT, freq= F, col=45, main = "", xlab= "log RTs values")
@@ -231,10 +318,11 @@ anova(modEmpty1, modLin)
 
 
 ```{r model on logRTs}
+
 if (B == "B1"){
-  mod1 <- lmer(logRT ~ task_R*ANSWER_R*cuecolor_R*cocoa + (1|pp), data= drt, REML=F)
+  mod1 <- lmer(logRT ~ task_R*ANSWER_R*context_R*cocoa + (1|pp), data= drt, REML=F)
 } else if (B == "B2"){
-  mod1 <- lmer(logRT ~ task_R*ANSWER_R*framecolor_R*cocoa + (1|pp), data= drt, REML=F)
+  mod1 <- lmer(logRT ~ task_R*ANSWER_R*context_R*cocoa + (1|pp), data= drt, REML=F)
 } else {
   mod1 <- lmer(logRT ~ task_R*ANSWER_R*context_R*cocoa + exp + (1|pp), data= drt, REML=F)
 }
@@ -243,18 +331,19 @@ summary(mod1)
 #write.csv2(write_pvalues(mod1, "exp"), file= paste0(tabDir, "mod1", ".csv"))
 
 # with control variables
-if (B == "B1"){
-  mod2 <- lmer(logRT ~ task_R*ANSWER_R*cuecolor_R*cocoa + blockNum + age + sex + counterbalance +
-                 handedness + prolific + (1|pp), data= drt, REML=F)
-  } else if (B == "B2"){
-  mod2 <- lmer(logRT ~ task_R*ANSWER_R*framecolor_R*cocoa + blockNum + age + sex + counterbalance + 
-                 handedness + (1|pp), data= drt, REML=F)
+if (B == "B1" | B == "B2"){
+  # same model for the 2 studies
+  # either country or prolific, not both
+  mod2 <- lmer(logRT ~ task_R*ANSWER_R*context_R*cocoa + blockNum + age + sex + map_horiAA300 +
+                 handedness + prolific + respRepetitions + (1|pp), data= drt, REML=F)
   } else{
+    # block num doens't interact signifcantly with ANS*task
   mod2 <- lmer(logRT ~ task_R*ANSWER_R*context_R*cocoa*exp + blockNum + age + sex + 
-                 handedness + prolific + (1|pp), data= drt, REML=F)
+                 handedness + prolific + map_horiAA300 + respRepetitions + (1|pp),
+               data= drt, REML=F)
   }
 summary(mod2)
-
+anova(mod2)
 write.csv2(write_pvalues(mod2, "exp"), file= paste0(tabDir, B, "_mod2", ".csv"))
 ```
 
@@ -272,7 +361,8 @@ modLog <- glm(error ~ 1, family="binomial", data= de)
 summary(modLog)
 
 # BRAC1: better with pp only
-# BRAC2: model with stimulus as random factor is better in BRAC02
+# BRAC2: stimulus as random factor better
+# Bewteen-subj: both pp and stim
 anova(modeEmpty, modeEmpty1)
 
 ```
@@ -280,30 +370,37 @@ anova(modeEmpty, modeEmpty1)
 ```{r logit mixed model}
 
 if (B == "B1"){
-  mode1 <- glm(error ~ task_R*ANSWER_R*cuecolor_R*cocoa, family="binomial", data= de)
+  mode1 <- glm(error ~ task_R*ANSWER_R*context_R + context_R*cocoa, family="binomial", data= de)
   #mode1 <- glmer(error ~ task_R*ANSWER_R*cuecolor_R*cocoa + (1|pp), family="binomial",
   #             control=glmerControl(optimizer="bobyqa"), data= de)
 } else if (B == "B2"){
   mode1 <- glmer(error ~ task_R*ANSWER_R*framecolor_R*cocoa + (1|pp) + (1|stimulus), family="binomial",
                control=glmerControl(optimizer="bobyqa"), data= de)
 } else{
-  mode1 <- glmer(error ~ task_R*ANSWER_R*exp + ANSWER_R*context_R + context_R*cocoa*exp + (1|pp) +
+  # I have used only the interactions that wrre significant in RTs analyses, for computational issues
+  mode1 <- glmer(error ~ task_R*ANSWER_R*context_R*cocoa*exp + (1|pp) +
                    (1|stimulus), family="binomial", control=glmerControl(optimizer="bobyqa"), data= de)
 }
-
 summary(mode1)
 write.csv2(OddRatio_tab(mode1), file= paste0(tabDir, B, "_mode1", ".csv"))
 
 # with more contorl variables
 
 if (B == "B1"){
-  mode2 <- glmer(error ~ task_R*ANSWER_R*cuecolor_R*cocoa + age + sex + counterbalance + 
-                 handedness + prolific + (1|pp), family="binomial",
+  mode2 <- glmer(error ~ task_R*ANSWER_R*context_R + task_R*cocoa + ANSWER_R*context_R + context_R*cocoa + 
+                   + task_R*context_R + task_R*cocoa + context_R*cocoa + age + sex +
+                   counterbalance + handedness + prolific + (1|pp), family="binomial",
                control=glmerControl(optimizer="bobyqa"), data= de)
 } else if (B == "B2"){
-  mode2 <- glmer(error ~ task_R*ANSWER_R*framecolor_R*cocoa + age + sex + counterbalance + 
-                 handedness + (1|pp), family="binomial",
-               control=glmerControl(optimizer="bobyqa"), data= de)
+  mode2 <- glmer(error ~ task_R*ANSWER_R*context_R + task_R*cocoa + ANSWER_R*context_R + context_R*cocoa + 
+                   + task_R*context_R + task_R*cocoa + context_R*cocoa + age + sex +
+                   counterbalance + handedness + prolific + respRepetitions + (1|pp), family="binomial",
+                 control=glmerControl(optimizer="bobyqa"), data= de)
+} else{
+  mode2 <- glmer(error ~ task_R*ANSWER_R*exp + task*context_R + exp*context_R + cocoa*context_R + 
+                   cocoa*exp + age + sex + map_horiAA300 + handedness + prolific + respRepetitions + 
+                   (1|pp) + (1|stimulus), family="binomial", control=glmerControl(optimizer="bobyqa"),
+                 data= de)
 }
 
 summary(mode2)

@@ -1,38 +1,17 @@
-"";"Estimate";"Std. Error";"exp_Estimate";"t value";"Pr(>|t|)"
-"(Intercept)";6,879;0,432;971,351;15,906;"< .001"
-"task_R1";0,178;0,018;1,195;9,97;"< .001"
-"ANSWER_R1";0,027;0,017;1,027;1,58;"0.114"
-"cuecolor_R1";0,053;0,019;1,054;2,821;"< .01"
-"cocoa300";0,015;0,019;1,015;0,826;"0.409"
-"blockNum";-0,055;0,003;0,946;-19,979;"< .001"
-"age";0,008;0,009;1,008;0,885;"0.382"
-"sexmale";0,024;0,081;1,024;0,293;"0.771"
-"counterbalanceBRAC1_horiAL_1st0";-0,024;0,191;0,976;-0,125;"0.901"
-"counterbalanceBRAC1_horiAL_1st300";-0,266;0,206;0,766;-1,291;"0.204"
-"counterbalanceBRAC1_horiLA_1st0";-0,163;0,205;0,849;-0,796;"0.431"
-"counterbalanceBRAC1_horiLA_1st300";0,016;0,19;1,016;0,083;"0.934"
-"counterbalanceBRAC1_horiLL_1st0";-0,169;0,214;0,844;-0,79;"0.434"
-"counterbalanceBRAC1_horiLL_1st300";0,135;0,207;1,145;0,654;"0.517"
-"counterbalanceBRAC1_vertAA_1st0";0,063;0,219;1,065;0,289;"0.774"
-"counterbalanceBRAC1_vertAA_1st300";0,129;0,266;1,138;0,485;"0.63"
-"counterbalanceBRAC1_vertAL_1st0";-0,077;0,226;0,926;-0,342;"0.734"
-"counterbalanceBRAC1_vertAL_1st300";-0,072;0,211;0,931;-0,34;"0.736"
-"counterbalanceBRAC1_vertLA_1st0";-0,213;0,223;0,808;-0,952;"0.347"
-"counterbalanceBRAC1_vertLA_1st300";-0,277;0,243;0,758;-1,137;"0.262"
-"counterbalanceBRAC1_vertLL_1st0";-0,115;0,243;0,891;-0,473;"0.639"
-"counterbalanceBRAC1_vertLL_1st300";0,047;0,219;1,048;0,213;"0.832"
-"counterbalancehoriAA_1st300";-0,203;0,204;0,816;-0,995;"0.326"
-"handednessOther (please specify)";0,032;0,287;1,032;0,111;"0.913"
-"handednessright-handed";-0,023;0,2;0,977;-0,117;"0.907"
-"prolific1";-0,359;0,113;0,698;-3,183;"< .01"
-"task_R1:ANSWER_R1";-0,05;0,024;0,951;-2,08;"< .05"
-"task_R1:cuecolor_R1";-0,068;0,026;0,934;-2,648;"< .01"
-"ANSWER_R1:cuecolor_R1";-0,01;0,025;0,99;-0,393;"0.694"
-"task_R1:cocoa300";-0,033;0,025;0,968;-1,277;"0.202"
-"ANSWER_R1:cocoa300";-0,009;0,025;0,991;-0,361;"0.718"
-"cuecolor_R1:cocoa300";-0,04;0,026;0,961;-1,533;"0.125"
-"task_R1:ANSWER_R1:cuecolor_R1";0,008;0,035;1,008;0,223;"0.824"
-"task_R1:ANSWER_R1:cocoa300";-0,018;0,035;0,982;-0,509;"0.611"
-"task_R1:cuecolor_R1:cocoa300";0,084;0,036;1,087;2,33;"< .05"
-"ANSWER_R1:cuecolor_R1:cocoa300";-0,014;0,035;0,986;-0,412;"0.68"
-"task_R1:ANSWER_R1:cuecolor_R1:cocoa300";0,029;0,049;1,029;0,582;"0.561"
+;Estimate;Std. Error;exp_Estimate;t value;Pr(>|t|)
+(Intercept);6,595;0,415;731,79;15,884;< .001
+task_R1;0,169;0,017;1,184;9,702;< .001
+ANSWER_R1;0,021;0,017;1,021;1,256;0.209
+context_R1;0,054;0,018;1,056;2,96;< .01
+cocoa300;0,018;0,018;1,018;0,98;0.327
+task_R1:ANSWER_R1;-0,043;0,023;0,958;-1,852;0.064
+task_R1:context_R1;-0,066;0,025;0,936;-2,657;< .01
+ANSWER_R1:context_R1;-0,011;0,024;0,989;-0,455;0.649
+task_R1:cocoa300;-0,024;0,025;0,976;-0,982;0.326
+ANSWER_R1:cocoa300;-0,007;0,024;0,993;-0,306;0.76
+context_R1:cocoa300;-0,042;0,025;0,958;-1,673;0.094
+task_R1:ANSWER_R1:context_R1;0,007;0,034;1,007;0,196;0.845
+task_R1:ANSWER_R1:cocoa300;-0,025;0,034;0,976;-0,724;0.469
+task_R1:context_R1:cocoa300;0,079;0,035;1,082;2,264;< .05
+ANSWER_R1:context_R1:cocoa300;-0,019;0,034;0,982;-0,553;0.58
+task_R1:ANSWER_R1:context_R1:cocoa300;0,042;0,048;1,043;0,887;0.375
