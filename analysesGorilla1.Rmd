@@ -370,6 +370,7 @@ if (unique(dclean$framecolor)[1] == "black"){
 # sum(dclean$ANSWER_R == 99) == length(unique(dclean$pp))*length(unique(dclean$blockNum))
 
 # create a column to signal post-errors trials
+# i think there's a 96 input missing
 dclean <- sequence_relation(dclean, "error", type = "error")
 
 #d <- dclean

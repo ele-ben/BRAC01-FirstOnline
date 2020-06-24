@@ -9,10 +9,12 @@ output: html_document
 
 # try if this works for your, otherwise load each package with the line below
 if(!require(pacman)) install.packages("pacman")
-pacman::p_load("haven", "dplyr", "lme4", "reshape2", "ggplot2", "wesanderson", "afex")
+pacman::p_load("haven", "dplyr", "lme4", "reshape2", "ggplot2", "wesanderson", "afex", "emmeans")
 
 select <- dplyr::select
 filter <- dplyr::filter
+
+emm_options(pbkrtest.limit = 27871)
 
 # write the path to your project folder
 setwd('C://Users//Elena//Documents//AA_PhD//Projects//BRAC01_BRAC02//BRAC01-FirstOnline')
@@ -77,7 +79,7 @@ d <- rbind(d1, d2)
 # adjust class of variables
 d$task_R <- as.factor(d$task_R)
 d$ANSWER_R <- as.factor(d$ANSWER_R)
-d[[context_R]] <- as.factor(d[[context_R]])
+#d[[context_R]] <- as.factor(d[[context_R]])
 d$context_R <- as.factor(d$context_R)
 d$Attempt <- as.factor(d$Attempt)
 d$cocoa <- as.factor(d$cocoa)
@@ -157,6 +159,8 @@ if (length(unique(d$framecolor)) == 3){
   context_R = "framecolor_R"
   }
 print(B)
+
+#write.table(d, paste0(dataDir, "temp_B1_B2_ageEstimated.csv"), sep = ";", dec = ".", row.names=FALSE)
 ```
 
 ```{r different datsets versions}
@@ -316,6 +320,24 @@ anova(modEmpty1, modLin)
 
 ```
 
+```{r}
+pigs.lm1 <- lm(log(conc) ~ source + factor(percent), data = pigs)
+ref_grid(pigs.lm1)
+
+ref_grid(pigs.lm1) @ grid
+
+d1 <- drt[(drt$pp == "NY3" | drt$pp == "VK1") & (drt$context_R == 1),]
+
+library(nlme)
+Oats.lmer <- lme4::lmer(yield ~ Variety + factor(nitro) + (1|Block/Variety),
+                        data = nlme::Oats, subset = -c(1,2,3,5,8,13,21,34,55))
+
+Oats.emm.n <- emmeans(Oats.lmer, c("nitro", "Variety"))
+
+install.packages("lsmeans")
+library(lsmeans)
+LSmeans(Oats.lmer, effect = "nitro")
+```
 
 ```{r model on logRTs}
 
@@ -324,10 +346,23 @@ if (B == "B1"){
 } else if (B == "B2"){
   mod1 <- lmer(logRT ~ task_R*ANSWER_R*context_R*cocoa + (1|pp), data= drt, REML=F)
 } else {
-  mod1 <- lmer(logRT ~ task_R*ANSWER_R*context_R*cocoa + exp + (1|pp), data= drt, REML=F)
+  mod1 <- lmer(rt ~ task_R*ANSWER_R*context_R*cocoa + (1|pp), data= drt, REML=T)
 }
 
+
+
+vcovmod1 <- vcov.merMod(mod1)
 summary(mod1)
+
+ciao <- emmeans(mod1, c("task_R", "ANSWER_R", "context_R", "cocoa"), lmer.df = "satterthwaite")
+ref_grid(mod1, data = drt ) @ grid
+ref_grid(mod1bis, data = drt ) @ grid
+emmeans(mod1) @ grid
+
+get_emm_option("lmer.df")
+
+
+mod1bis <- lmer(logRT ~ task_R + ANSWER_R + (1|pp), data= drt, REML=T)
 #write.csv2(write_pvalues(mod1, "exp"), file= paste0(tabDir, "mod1", ".csv"))
 
 # with control variables
@@ -337,13 +372,15 @@ if (B == "B1" | B == "B2"){
   mod2 <- lmer(logRT ~ task_R*ANSWER_R*context_R*cocoa + blockNum + age + sex + map_horiAA300 +
                  handedness + prolific + respRepetitions + (1|pp), data= drt, REML=F)
   } else{
-    # block num doens't interact signifcantly with ANS*task
+    # block num doens't interact signifcantly with ANS*task - so no evidence they learnt about different
+    # frequency of resp sw or rep
   mod2 <- lmer(logRT ~ task_R*ANSWER_R*context_R*cocoa*exp + blockNum + age + sex + 
                  handedness + prolific + map_horiAA300 + respRepetitions + (1|pp),
                data= drt, REML=F)
   }
 summary(mod2)
-anova(mod2)
+ref_grid(mod2, cov.reduce =)
+
 write.csv2(write_pvalues(mod2, "exp"), file= paste0(tabDir, B, "_mod2", ".csv"))
 ```
 
