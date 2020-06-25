@@ -110,7 +110,7 @@ d$country[d$country == "italy"] <- "Italy"
 d$country[d$country == "Netherlands"] <- "The Netherlands"
 d$country[d$country == "poland"] <- "Poland"
 d$country[d$country == "Portual"] <- "Portugal"
-d$country[d$country == "España"] <- "Spain"
+d$country[d$country == "EspaÃ±a"] <- "Spain"
 d$country[d$country == "United States"] <- "USA"
 
 #table(d$motherTongue)
