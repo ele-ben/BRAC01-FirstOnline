@@ -72,7 +72,7 @@ data2_files <- list.files(
 
 # there's an empty column after breakmessage, donot know why
 # cut last row (empty)
-d <- read.csv2(paste0(dataDir, data2_files[2]), sep = ";", fileEncoding="UTF-8-BOM")
+d <- read.csv2(paste0(dataDir, data2_files[1]), sep = ";", fileEncoding="UTF-8-BOM")
 d <- d[c(1:nrow(d) - 1), ]
 
 data_exp <- read.csv2(paste0(dataDir, data2_files[4]), sep = ";")
@@ -96,24 +96,26 @@ demo2_files <- list.files(
 )
 
 #demo1 <- as.data.frame(read_excel(paste0(dataDir, demo1_files[1])))
-demo1 <- read.csv(paste0(dataDir, demo2_files[2]), sep = ";", fileEncoding="UTF-8-BOM")
+demo1 <- read.csv(paste0(dataDir, demo2_files[1]), sep = ";", fileEncoding="UTF-8-BOM")
 demo1 <- demo1[c(1:nrow(demo1) - 1), ]
 
-demo2 <- read.csv(paste0(dataDir, demo2_files[4]), sep = ";")
+demo2 <- read.csv(paste0(dataDir, demo2_files[1]), sep = ";")
 demo2 <- demo2[c(1:nrow(demo2) - 1), ]
 #demo2 <- subset(demo2, select = - X)
 
 names(demo1)[names(demo1) == "counterbalance.7ip1"] <- "counterbalance.9qvq"
 demo1 <- subset(demo1, select = - counterbalance.a7a6)
+demo[demo$pp == "BLIND", "pp"] <- "NY3"
 
 demo <- rbind(demo1, demo2) 
 #quantiPps1 <- length(unique(demo$Participant.Public.ID))
 
-write.csv2(d, paste0(dataDir, "data_exp_", exp,"_", quantiPps, "pps_task-me89.csv"), row.names = F)
-write.csv2(demo, paste0(dataDir, "data_exp_", exp, "_", quantiPps, "pps_questionnaire-b579.csv"), row.names = F)
+# write.csv2(d, paste0(dataDir, "data_exp_", exp,"_", quantiPps, "pps_task-me89.csv"), row.names = F)
+#write.csv2(demo, paste0(dataDir, "data_exp_", exp, "_", quantiPps, "pps_questionnaire-b579.csv"), row.names = F)
+write.csv2(demo, paste0(dataDir, "data_exp_", exp, "_PlusMara_", "questionnaire-b579.csv"), row.names = F)
 
 #d <- data_exp
-#demo <- demo1
+demo <- demo2
 
 # Rename certain columns in exp data ------
 
@@ -145,27 +147,28 @@ names(demo)[which(names(demo) == "Question.Key")] <- "questionKey"
 names(demo)[which(names(demo) == "Participant.Public.ID")] <- "pp"
 
 
+
 # Inspect the dataset to check for undesiderable events --------
 
-# If you don't want to go over the old pps... :
-# reload the old logbook
-oldLogbook <- read.csv2(paste0(tabDir, "logbook_B2prolific.csv"))
-
-# detect the old pps and subtract them from the whole set of pps
-#oldPps <- oldLogbook$pp
-oldPps <- unique(data_exp[data_exp$Experiment.Version == 2, "Participant.Public.ID"])
-newPps <- setdiff(unique(d$pp), oldPps)
+# # If you don't want to go over the old pps... :
+# # reload the old logbook
+# oldLogbook <- read.csv2(paste0(tabDir, "logbook_B2prolific.csv"))
+# 
+# # detect the old pps and subtract them from the whole set of pps
+# #oldPps <- oldLogbook$pp
+# oldPps <- unique(data_exp[data_exp$Experiment.Version == 2, "Participant.Public.ID"])
+# newPps <- setdiff(unique(d$pp), oldPps)
 
 # prepare some variables that will be filled in the loop below:
 # for durations and logbook_df run the row with d$pp OR the one with newPps
 
 # vector that collects duration of experiment for each pp. Then you can extract mean duration in minutes
-#durations <- rep(0, length(unique(d$pp)))
-durations <- rep(0, length(newPps))
+durations <- rep(0, length(unique(d$pp)))
+#durations <- rep(0, length(newPps))
 
 # create the logbook, a df that will contain demographics and other info for each pp.
-#logbook_df <- data.frame("pp" = unique(d$pp))
-logbook_df <- data.frame("pp" = newPps)
+logbook_df <- data.frame("pp" = unique(d$pp))
+#logbook_df <- data.frame("pp" = newPps)
 
 # it also contains a column to signal if a pp is to remove (set to 0 (=accept) as default)
 logbook_df$remove <- 0
@@ -178,8 +181,8 @@ logbook_df$message <- ""
 
 # Loop over pps to check if some events happened...
 #... run either the first or the second line:
-#for (j in unique(d$pp)){
-for (j in newPps){
+for (j in unique(d$pp)){
+#for (j in newPps){
   
   # preallocate empty strings that will be filled if sth went wrong
   screen_mess = ""
@@ -298,7 +301,8 @@ for (j in unique(d$pp)){
       cat("pp", j, "had", rowsCount, "time trial number", t, "\n")
       trialMess = paste("had", rowsCount, "time trial number", t, ";")
       finalMess = paste0(finalMess, trialMess)
-      logbook_df[logbook_df$pp == j, "message"] <- finalMess
+      #logbook_df[logbook_df$pp == j, "message"] <- finalMess
+      #oldLogbook[oldLogbook$pp == j, "message"] <- finalMess
     }
   }
 }
@@ -331,8 +335,8 @@ dclean <- sequence_relation(dclean, "error", type = "error", max(d$trialNum, na.
 
 # seek for fast responses, errors and not answered trials
 
-#for (j in unique(dclean$pp)){
-for (j in newPps){
+for (j in unique(dclean$pp)){
+#for (j in newPps){
   
   # prepare empty strings to fill logbook
   fast_mess = ""
@@ -422,28 +426,39 @@ demotemp1$motherTongue[demotemp1$motherTongue == "portuguese"] <- "Portuguese"
 demotemp1$motherTongue[demotemp1$motherTongue == "Portuguese (PT)"] <- "Portuguese"
 
 
-
 # Merge Demo with Logbook -----------------------
 
 # Merge new pps in this demo dataframe with the logbook, matching the rows by pp ID
 # all.x allows to include pp that did exp but not demographics
 # At the same time we are merging only the pps in the logbook and not the old ones
-logbook_toExp1 <- merge(logbook_df, demotemp1, by = "pp", all.x = T)
-# try this line, if it says: "Error: object 'X' not found" then just skip this line and
-# run the one below
-oldLogbook <- subset(oldLogbook, select = - X)
+logbook_toExp <- merge(logbook_df, demotemp1, by = "pp", all.x = T)
 
-# pile up the new and the old logbooks
-logbook_toExp <- rbind(oldLogbook, logbook_toExp1)
+
+# # Or, if old logbook present:
+# logbook_toExp1 <- merge(logbook_df, demotemp1, by = "pp", all.x = T)
+# 
+# # try this line, if it says: "Error: object 'X' not found" then just skip this line and
+# # run the one below
+# oldLogbook <- subset(oldLogbook, select = - X)
+# 
+# # pile up the new and the old logbooks
+# for (ppRem in logbook_toExp1$pp){
+#   print(ppRem)
+#   oldLogbook <- oldLogbook[!oldLogbook$pp == ppRem, ]
+# }
+# 
+# logbook_toExp <- rbind(oldLogbook, logbook_toExp1)
 
 # save this dataframe for future inspections
-write.csv2(logbook_toExp, paste0(tabDir, "logbook_", B, "prolific.csv"), row.names = F)
-
+write.csv2(logbook_toExp, paste0(tabDir, "logbook_", B, "RWTH.csv"), row.names = F)
 
 
 # Refine cleaned dataset --------------------
 
 # Remove the pps to be removed
+
+#load the logbook (if not done already)
+#logbook_toExp <- read.csv2(paste0(tabDir, "logbook_B2Prolific.csv"))
 
 # find pps to remove from the loogbook (that now includes old and new pps)
 pps2remove <- logbook_toExp[logbook_toExp$remove == 1, "pp"]
@@ -457,13 +472,22 @@ for (ppRem in pps2remove){
 
 # add demographic variables to the dataset
 for (j in unique(dclean$pp)){
-  dclean$age <- demo[demo$pp == j, "age"]
-  dclean$sex <- demo[demo$pp == j, "sex"]
-  dclean$psyKnowledge <- demo[demo$pp == j, "psyKnowledge"]
-  dclean$education <- demo[demo$pp == j, "education"]
-  dclean$handedness <- demo[demo$pp == j, "handedness"]
-  dclean$motherTongue <- demo[demo$pp == j, "motherTongue"]
-  dclean$country <- demo[demo$pp == j, "country"]
+  print(j)
+  dclean[dclean$pp == j, "age"] <- demotemp1[demotemp1$pp == j, "age"]
+  dclean[dclean$pp == j, "sex"] <- demotemp1[demotemp1$pp == j, "sex"]
+  dclean[dclean$pp == j, "psyKnowledge"] <- demotemp1[demotemp1$pp == j, "psyKnowledge"]
+  dclean[dclean$pp == j, "education"] <- demotemp1[demotemp1$pp == j, "education"]
+  dclean[dclean$pp == j, "handedness"] <- demotemp1[demotemp1$pp == j, "handedness"]
+  dclean[dclean$pp == j, "motherTongue"] <- demotemp1[demotemp1$pp == j, "motherTongue"]
+  dclean[dclean$pp == j, "country"] <- demotemp1[demotemp1$pp == j, "country"]
+}
+
+# fix Browser and OS
+for (i in 1:dim(dclean)[1]){
+  dclean$Participant.OS[i] <- gsub("^Mac OS(.)+", "MacOs", dclean$Participant.OS[i])
+  dclean$Participant.OS[i] <- gsub("^Windows(.)+", "Windows", dclean$Participant.OS[i])
+  dclean$Participant.Browser[i] <- gsub("^Safari(.)+", "Safari", dclean$Participant.Browser[i])
+  dclean$Participant.Browser[i] <- gsub("^Chrome(.)+", "Chrome", dclean$Participant.Browser[i])
 }
 
 # save the dataset ready for the analyses

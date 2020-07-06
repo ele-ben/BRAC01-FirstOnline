@@ -23,7 +23,14 @@ source("C://Users//Elena//Documents//AA_PhD//Projects//expra2020_faces//modelsFu
  
 # Load and prepare Data -------------------------------
 
-d <- read.csv(paste0(dataDir, "temp_B1_B2_ageEstimated", ".csv"), sep = ";", dec = ",")
+d_pro <- read.csv(paste0(dataDir, "B2_Pro", ".csv"), sep = ";", dec = ",")
+d_pro$prolific <- 1
+
+d_rwth <- read.csv(paste0(dataDir, "B2_RWTH", ".csv"), sep = ";", dec = ",")
+d_rwth$prolific <- 0
+
+d <- rbind(d_rwth, d_pro)
+names(d)[names(d) == "framecolor_R"] <- "context_R"
 
 # change variables class
 
