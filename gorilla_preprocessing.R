@@ -25,6 +25,7 @@ source("C://Users//Elena//Documents//AA_PhD//Projects//expra2020_faces//modelsFu
 # Load data  ------------------------------
 
 # 17308-v16 = OLD_BRAC01 - RWTH
+# 18723-v2 = NEW_BRAC01 - RWTH
 # 17326-v8 = BRAC02 - RWTH - Solo Mara!
 # 17326-v13 = BRAC02 - RWTH
 # 18619-v2 or v3 = BRAC02 - Prolific
@@ -39,16 +40,24 @@ source("C://Users//Elena//Documents//AA_PhD//Projects//expra2020_faces//modelsFu
 # For BRAC01 ---------------------
 # load experiment data
 
-exp = "17308-v16"
-version = ""
+exp = "RWTH"
+version = "(.)*"
 file_extesion = ".csv"
 
 data1_files <- list.files(
   dataDir, pattern = paste0("^d(.)+", exp ,"(.)+task-in6f", version, file_extesion)
 )
 
-data_exp <- read.csv2(paste0(dataDir, data1_files[1]), sep = ";", fileEncoding="UTF-8-BOM")
+d <- read.csv2(paste0(dataDir, data1_files[1]), sep = ";", fileEncoding="UTF-8-BOM")
+d <- d[c(1:nrow(d) - 1), ]
+
+data_exp <- read.csv2(paste0(dataDir, data1_files[2]), sep = ";")
 data_exp <- data_exp[c(1:nrow(data_exp) - 1), ]
+
+#data_exp <- subset(data_exp, select = - X)
+# remove 5dada613823b7d0016484453 for taking part in brac2
+
+names(data_exp)[names(data_exp) == "checkpoint.tucj"] <- "checkpoint.fqea"
 
 #load demographics data
 version = ""
@@ -56,8 +65,14 @@ demo1_files <- list.files(
   dataDir, pattern = paste0("^d(.)+", exp ,"(.)+questionnaire-89vf", version, file_extesion)
 )
 
-demo20 <- read.csv(paste0(dataDir, demo1_files[1]), sep = ";", fileEncoding="UTF-8-BOM")
-demo20 <- demo20[c(1:nrow(demo20) - 1), ]
+demo1 <- read.csv(paste0(dataDir, demo1_files[1]), sep = ";", fileEncoding="UTF-8-BOM")
+demo1 <- demo1[c(1:nrow(demo1) - 1), ]
+
+demo2 <- read.csv(paste0(dataDir, demo1_files[2]), sep = ";")
+demo2 <- demo2[c(1:nrow(demo2) - 1), ]
+
+names(demo2)[names(demo2) == "checkpoint.tucj"] <- "checkpoint.fqea"
+
 
 # For BRAC02 ---------------
 
@@ -107,15 +122,23 @@ names(demo1)[names(demo1) == "counterbalance.7ip1"] <- "counterbalance.9qvq"
 demo1 <- subset(demo1, select = - counterbalance.a7a6)
 demo[demo$pp == "BLIND", "pp"] <- "NY3"
 
-demo <- rbind(demo1, demo2) 
-#quantiPps1 <- length(unique(demo$Participant.Public.ID))
 
-# write.csv2(d, paste0(dataDir, "data_exp_", exp,"_", quantiPps, "pps_task-me89.csv"), row.names = F)
-#write.csv2(demo, paste0(dataDir, "data_exp_", exp, "_", quantiPps, "pps_questionnaire-b579.csv"), row.names = F)
-write.csv2(demo, paste0(dataDir, "data_exp_", exp, "_PlusMara_", "questionnaire-b579.csv"), row.names = F)
+
+
+# Save datasets and choose which to parse in the script ----------
+d <- rbind(d, data_exp)
+demo <- rbind(demo1, demo2) 
+quantiPps <- length(unique(demo$Participant.Public.ID))
+
+write.csv2(d, paste0(dataDir, "data_exp_", exp,"_", quantiPps, "pps_task-in6f.csv"), row.names = F)
+write.csv2(demo, paste0(dataDir, "data_exp_", exp, "_", quantiPps, "pps_questionnaire-89vf.csv"), row.names = F)
+#write.csv2(demo, paste0(dataDir, "data_exp_", exp, "_PlusMara_", "questionnaire-b579.csv"), row.names = F)
+
+# write.csv2(d, paste0(dataDir, "data_exp_", "_RWTH_OldNew_", "task-in6f.csv"), row.names = F)
+# write.csv2(demo, paste0(dataDir, "data_exp_", "_RWTH_OldNew_", "questionnaire-89vf.csv"), row.names = F)
 
 #d <- data_exp
-demo <- demo2
+#demo <- demo1
 
 # Rename certain columns in exp data ------
 
@@ -148,27 +171,28 @@ names(demo)[which(names(demo) == "Participant.Public.ID")] <- "pp"
 
 
 
+
 # Inspect the dataset to check for undesiderable events --------
 
-# # If you don't want to go over the old pps... :
-# # reload the old logbook
-# oldLogbook <- read.csv2(paste0(tabDir, "logbook_B2prolific.csv"))
-# 
-# # detect the old pps and subtract them from the whole set of pps
-# #oldPps <- oldLogbook$pp
-# oldPps <- unique(data_exp[data_exp$Experiment.Version == 2, "Participant.Public.ID"])
-# newPps <- setdiff(unique(d$pp), oldPps)
+# If you don't want to go over the old pps... :
+# reload the old logbook
+oldLogbook <- read.csv2(paste0(tabDir, "logbook_old_B1_RWTH", ".csv"))
+
+# detect the old pps and subtract them from the whole set of pps
+oldPps <- oldLogbook$pp
+#oldPps <- unique(data_exp[data_exp$Experiment.Version == 2, "Participant.Public.ID"])
+newPps <- setdiff(unique(d$pp), oldPps)
 
 # prepare some variables that will be filled in the loop below:
 # for durations and logbook_df run the row with d$pp OR the one with newPps
 
 # vector that collects duration of experiment for each pp. Then you can extract mean duration in minutes
-durations <- rep(0, length(unique(d$pp)))
-#durations <- rep(0, length(newPps))
+#durations <- rep(0, length(unique(d$pp)))
+durations <- rep(0, length(newPps))
 
 # create the logbook, a df that will contain demographics and other info for each pp.
-logbook_df <- data.frame("pp" = unique(d$pp))
-#logbook_df <- data.frame("pp" = newPps)
+#logbook_df <- data.frame("pp" = unique(d$pp))
+logbook_df <- data.frame("pp" = newPps)
 
 # it also contains a column to signal if a pp is to remove (set to 0 (=accept) as default)
 logbook_df$remove <- 0
@@ -181,8 +205,8 @@ logbook_df$message <- ""
 
 # Loop over pps to check if some events happened...
 #... run either the first or the second line:
-for (j in unique(d$pp)){
-#for (j in newPps){
+#for (j in unique(d$pp)){
+for (j in newPps){
   
   # preallocate empty strings that will be filled if sth went wrong
   screen_mess = ""
@@ -204,12 +228,12 @@ for (j in unique(d$pp)){
     finish_mess = paste("pp ", j, " has not gotten to the end.")
   } else {
     # if she finished, calculate duration
-    begin <- as.POSIXct(as.character(d[d$pp == j & d$eventIndex == 1, "localDate"]),format="%d/%m/%Y %H:%M:%S")
+    begin <- as.POSIXct(as.character(d[d$pp == j & d$eventIndex == 1, "UTC.Date"]),format="%d/%m/%Y %H:%M:%S")
     # choose the 1st or the 2nd couple or rows: the 1st counts duration from instr to end, the 2nd includes time to answer to demogr
     
     # duration excluding demographics
     endRow <- which(d$pp == j & d$breakMessage == "## You have completed block 4 out of 4.")
-    end <- as.POSIXct(as.character(d[endRow, "localDate"]), format="%d/%m/%Y %H:%M:%S")
+    end <- as.POSIXct(as.character(d[endRow, "UTC.Date"]), format="%d/%m/%Y %H:%M:%S")
     
     # duration including demographics
     # endRow <- which(demo$pp == j & demo$questionKey == "END QUESTIONNAIRE")
@@ -293,6 +317,7 @@ dclean <- dclean[!is.na(dclean$pp), ]
 
 # check if each pp has 384 trials, if not write in the logbook
 for (j in unique(d$pp)){
+  #print(j)
   trialMess = ""
   finalMess = ""
   for (t in 0:95){
@@ -301,42 +326,24 @@ for (j in unique(d$pp)){
       cat("pp", j, "had", rowsCount, "time trial number", t, "\n")
       trialMess = paste("had", rowsCount, "time trial number", t, ";")
       finalMess = paste0(finalMess, trialMess)
-      #logbook_df[logbook_df$pp == j, "message"] <- finalMess
-      #oldLogbook[oldLogbook$pp == j, "message"] <- finalMess
+      logbook_df[logbook_df$pp == j, "message"] <- finalMess
+      oldLogbook[oldLogbook$pp == j, "message"] <- finalMess
     }
   }
 }
   
   
-# pp 5d893d3fc993870001ccd14e had twice trial 16 in block 0
-wh <- which(dclean$pp == "5d893d3fc993870001ccd14e" & dclean$blockNum == 0 & dclean$trialNum == 16 & 
-              is.na(dclean$Response))
-dclean <- dclean[-c(wh),]
+# # pp 5d893d3fc993870001ccd14e had twice trial 16 in block 0
+# wh <- which(dclean$pp == "5d893d3fc993870001ccd14e" & dclean$blockNum == 0 & dclean$trialNum == 16 & 
+#               is.na(dclean$Response))
+# dclean <- dclean[-c(wh),]
 
-# Sequence variables
-
-# create a column to signal rep or sw for each relevant variable (task, response, context..)
-# different colour column if BRAC1 or BRAC2
-if (unique(dclean$framecolor)[1] == "black"){
-  B = "B1"
-  dclean <- sequence_relation(dclean, c("task", "ANSWER", "cuecolor"), max(d$trialNum, na.rm = T) + 1)
-} else if (unique(dclean$cuecolor)[1] == "black"){
-  B = "B2"
-  dclean <- sequence_relation(dclean, c("task", "ANSWER", "framecolor"), max(d$trialNum, na.rm = T) + 1)
-}
-
-# sum(dclean[dclean$task_R == 99, "trialNum"]) == 0
-# sum(dclean$ANSWER_R == 99) == length(unique(dclean$pp))*length(unique(dclean$blockNum))
-
-# create a column to signal post-errors trials
-dclean <- sequence_relation(dclean, "error", type = "error", max(d$trialNum, na.rm = T) + 1)
 
 # Check the performance --------------------------------
 
 # seek for fast responses, errors and not answered trials
-
-for (j in unique(dclean$pp)){
-#for (j in newPps){
+#for (j in unique(dclean$pp)){
+for (j in newPps){
   
   # prepare empty strings to fill logbook
   fast_mess = ""
@@ -374,8 +381,10 @@ for (j in unique(dclean$pp)){
   }
 }
 
-# Export the pps ID of the accepted ones to upload in Prolific
+# Export the pps ID of the accepted ones to upload in Prolific -----------
 acceptedPps <- logbook_df[logbook_df$remove == 0, "pp"]
+# warning for the user
+cat("You're accepting", length(acceptedPps), "participants")
 write.table(acceptedPps, paste0(tabDir, "accept_", Sys.Date(), ".csv"), sep = ",", col.names = F, row.names = F,
             quote = F)
 
@@ -403,15 +412,23 @@ demotemp1 <- demotemp1[!is.na(demotemp1$pp),]
 
 demotemp1$country[demotemp1$country == "Wales"] <- "United Kingdom"
 demotemp1$country[demotemp1$country == "England"] <- "United Kingdom"
+demotemp1$country[demotemp1$country == "england"] <- "United Kingdom"
 demotemp1$country[demotemp1$country == "English"] <- "United Kingdom"
+demotemp1$country[demotemp1$country == "UK"] <- "United Kingdom"
+demotemp1$country[demotemp1$country == "uk"] <- "United Kingdom"
 demotemp1$country[demotemp1$country == "Northern Ireland"] <- "United Kingdom"
 demotemp1$country[demotemp1$country == "germany"] <- "Germany"
 demotemp1$country[demotemp1$country == "italy"] <- "Italy"
 demotemp1$country[demotemp1$country == "Netherlands"] <- "The Netherlands"
 demotemp1$country[demotemp1$country == "poland"] <- "Poland"
 demotemp1$country[demotemp1$country == "Portual"] <- "Portugal"
+demotemp1$country[demotemp1$country == "portugal"] <- "Portugal"
 demotemp1$country[demotemp1$country == "España"] <- "Spain"
 demotemp1$country[demotemp1$country == "United States"] <- "USA"
+demotemp1$country[demotemp1$country == "Alabama"] <- "USA"
+demotemp1$country[demotemp1$country == "france"] <- "France"
+demotemp1$country[demotemp1$country == "Grrece"] <- "Greece"
+demotemp1$country[demotemp1$country == "Polska"] <- "Poland"
 
 # MotherTongue 
 
@@ -420,10 +437,13 @@ demotemp1$motherTongue[demotemp1$motherTongue == "german"] <- "German"
 demotemp1$motherTongue[demotemp1$motherTongue == "italian"] <- "Italian"
 demotemp1$motherTongue[demotemp1$motherTongue == "Hungary"] <- "Hungarian"
 demotemp1$motherTongue[demotemp1$motherTongue == "polish"] <- "Polish"
+demotemp1$motherTongue[demotemp1$motherTongue == "Polish "] <- "Polish"
 demotemp1$motherTongue[demotemp1$motherTongue == "Polish language"] <- "Polish"
 demotemp1$motherTongue[demotemp1$motherTongue == "Poland"] <- "Polish"
 demotemp1$motherTongue[demotemp1$motherTongue == "portuguese"] <- "Portuguese"
 demotemp1$motherTongue[demotemp1$motherTongue == "Portuguese (PT)"] <- "Portuguese"
+demotemp1$motherTongue[demotemp1$motherTongue == "português"] <- "Portuguese"
+
 
 
 # Merge Demo with Logbook -----------------------
@@ -431,26 +451,56 @@ demotemp1$motherTongue[demotemp1$motherTongue == "Portuguese (PT)"] <- "Portugue
 # Merge new pps in this demo dataframe with the logbook, matching the rows by pp ID
 # all.x allows to include pp that did exp but not demographics
 # At the same time we are merging only the pps in the logbook and not the old ones
-logbook_toExp <- merge(logbook_df, demotemp1, by = "pp", all.x = T)
+#logbook_toExp <- merge(logbook_df, demotemp1, by = "pp", all.x = T)
 
 
-# # Or, if old logbook present:
-# logbook_toExp1 <- merge(logbook_df, demotemp1, by = "pp", all.x = T)
-# 
-# # try this line, if it says: "Error: object 'X' not found" then just skip this line and
-# # run the one below
-# oldLogbook <- subset(oldLogbook, select = - X)
-# 
-# # pile up the new and the old logbooks
-# for (ppRem in logbook_toExp1$pp){
-#   print(ppRem)
-#   oldLogbook <- oldLogbook[!oldLogbook$pp == ppRem, ]
+# Or, if old logbook present:
+logbook_toExp1 <- merge(logbook_df, demotemp1, by = "pp", all.x = T)
+
+# try this line, if it says: "Error: object 'X' not found" then just skip this line and
+# run the one below
+oldLogbook <- subset(oldLogbook, select = - X)
+#oldLogbook <- subset(oldLogbook, select = - fake_mapping)
+names(oldLogbook)[names(oldLogbook) == "response.2"] <- "handedness"
+names(oldLogbook)[names(oldLogbook) == "response.3"] <- "motherTongue"
+
+# pile up the new and the old logbooks
+for (ppRem in logbook_toExp1$pp){
+  print(ppRem)
+  oldLogbook <- oldLogbook[!oldLogbook$pp == ppRem, ]
+}
+
+#oldLogbook$message1 <- ""
+
+logbook_toExp <- rbind(oldLogbook, logbook_toExp1)
+
+# Now set to remove = 1 those pps who were rewarded, but must not be analysed
+
+# Remove 5dada613823b7d0016484453 for taking part in brac2
+logbook_toExp[logbook_toExp$pp == "5dada613823b7d0016484453", "remove"] <- 1
+logbook_toExp[logbook_toExp$pp == "5dada613823b7d0016484453", "message"] <- "for taking part in brac2"
+
+# # Print messages of the rewarded ones
+# rewardedPps <- logbook_toExp[logbook_toExp$remove == 0, "pp"]
+# for (j in rewardedPps){
+#   print(logbook_toExp[logbook_toExp == j, "message"])
 # }
-# 
-# logbook_toExp <- rbind(oldLogbook, logbook_toExp1)
+
+# Fix mapping for wrong expeirment rwth brac1
+
+# for (j in oldPps){
+#   logbook_toExp[logbook_toExp$pp == j, "message1"] <- "had BRAC1_horiAA_1st300 mapping"
+#   logbook_toExp[logbook_toExp$pp == j, "mapping"] <- "BRAC1_horiAA_1st300"
+# }
+
+if (unique(dclean$framecolor)[1] == "black"){
+  B = "B1"
+} else if (unique(dclean$cuecolor)[1] == "black"){
+  B = "B2"
+}
 
 # save this dataframe for future inspections
-write.csv2(logbook_toExp, paste0(tabDir, "logbook_", B, "RWTH.csv"), row.names = F)
+write.csv2(logbook_toExp, paste0(tabDir, "logbook_", B, "_RWTH.csv"), row.names = F)
 
 
 # Refine cleaned dataset --------------------
@@ -470,9 +520,24 @@ for (ppRem in pps2remove){
   dclean <- dclean[!dclean$pp == ppRem, ]
 }
 
-# add demographic variables to the dataset
+# Add Sequence variables
+
+# create a column to signal rep or sw for each relevant variable (task, response, context..)
+# different colour column if BRAC1 or BRAC2
+if (unique(dclean$framecolor)[1] == "black"){
+  dclean <- sequence_relation(dclean, c("task", "ANSWER", "cuecolor"), max(d$trialNum, na.rm = T) + 1)
+} else if (unique(dclean$cuecolor)[1] == "black"){
+  dclean <- sequence_relation(dclean, c("task", "ANSWER", "framecolor"), max(d$trialNum, na.rm = T) + 1)
+}
+
+# sum(dclean[dclean$task_R == 99, "trialNum"]) == 0
+# sum(dclean$ANSWER_R == 99) == length(unique(dclean$pp))*length(unique(dclean$blockNum))
+
+# create a column to signal post-errors trials
+dclean <- sequence_relation(dclean, "error", type = "error", max(d$trialNum, na.rm = T) + 1)
+
+# Add demographic variables to the dataset
 for (j in unique(dclean$pp)){
-  print(j)
   dclean[dclean$pp == j, "age"] <- demotemp1[demotemp1$pp == j, "age"]
   dclean[dclean$pp == j, "sex"] <- demotemp1[demotemp1$pp == j, "sex"]
   dclean[dclean$pp == j, "psyKnowledge"] <- demotemp1[demotemp1$pp == j, "psyKnowledge"]
@@ -491,7 +556,7 @@ for (i in 1:dim(dclean)[1]){
 }
 
 # save the dataset ready for the analyses
-write.csv2(dclean, paste0(dataDir, B, "_Pro.csv"), row.names=FALSE)
+write.csv2(dclean, paste0(dataDir, B, "_RWTH.csv"), row.names=FALSE)
 
 # Counterbalance overview ---------------------------------------
 
@@ -507,3 +572,4 @@ for (i in 1:length(maps)){
 
 sum(mapps$count)
 sum(mapps$incl_remove)
+write.csv(mapps[mapps$count < 4, "map"], paste0(tabDir, "counterbalcneToRun.csv"))

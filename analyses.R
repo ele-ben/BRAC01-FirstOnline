@@ -7,7 +7,7 @@ select <- dplyr::select
 filter <- dplyr::filter
 
 # parameter for graphs
-pd = position_dodge(.7)
+pd = position_dodge(.1)
 
 # write the path to your project folder
 setwd('C://Users//Elena//Documents//AA_PhD//Projects//BRAC01_BRAC02//BRAC01-FirstOnline')
@@ -20,19 +20,57 @@ tabDir = "tables//"
 # a .R file with custom functions - define the path to it if different from the working directory
 source("C://Users//Elena//Documents//AA_PhD//Projects//expra2020_faces//modelsFun.R")
 
- 
-# Load and prepare Data -------------------------------
 
-d_pro <- read.csv(paste0(dataDir, "B2_Pro", ".csv"), sep = ";", dec = ",")
+# Load and prepare Data ----------------------------------------------------------------------------------------
+
+#B = "B1B2"
+B = "B1"
+#B = "B2"
+
+# Load B1 and pick 2 people form rwth only ----------------------------------------------------------------------
+d_pro <- read.csv(paste0(dataDir, "B1_Pro", ".csv"), sep = ";", dec = ",")
 d_pro$prolific <- 1
 
-d_rwth <- read.csv(paste0(dataDir, "B2_RWTH", ".csv"), sep = ";", dec = ",")
+d_rwth <- read.csv(paste0(dataDir, "B1_RWTH", ".csv"), sep = ";", dec = ",")
 d_rwth$prolific <- 0
 
-d <- rbind(d_rwth, d_pro)
-names(d)[names(d) == "framecolor_R"] <- "context_R"
+# Pick 2 pps with horiAA_1st300
 
-# change variables class
+# We got too many with same counterbalance:
+# I pick LU1 and LY8, the first male and a female with no warnings int he logbook
+rwthLB <- read.csv2(paste0(tabDir, "logbook_B1_RWTH", ".csv"))
+
+pps2keep <- rwthLB[rwthLB$mapping != "BRAC1_horiAA_1st300" | rwthLB$pp == "LU1" | rwthLB$pp == "LY8", "pp"]
+pps2rem <- setdiff(unique(d_rwth$pp), pps2keep)
+
+for (ppRem in pps2rem){
+  d_rwth <- d_rwth[!d_rwth$pp == ppRem, ]
+}
+
+d1 <- rbind(d_rwth, d_pro)
+names(d1)[names(d1) == "cuecolor_R"] <- "context_R"
+d1$exp <- "BRAC1"
+
+# Load BRAC2 ---------------------------------------------------------------------------------------------
+d_pro2 <- read.csv(paste0(dataDir, "B2_Pro", ".csv"), sep = ";", dec = ",")
+d_pro2$prolific <- 1
+
+d_rwth2 <- read.csv(paste0(dataDir, "B2_RWTH", ".csv"), sep = ";", dec = ",")
+d_rwth2$prolific <- 0
+
+d2 <- rbind(d_rwth2, d_pro2)
+names(d2)[names(d2) == "framecolor_R"] <- "context_R"
+d2$exp <- "BRAC2"
+
+dtot <- rbind(d1, d2)
+
+# Subset the dataset based on the B
+
+if(B == "B1"){d <- dtot[dtot$exp == "BRAC1",]
+}else if (B == "B2"){d <- dtot[dtot$exp == "BRAC2",]
+}else if (B== "B"){d <- dtot}
+
+# Change variables class ----------------------------------------------------------------------------------------
 
 d$task_R <- as.factor(d$task_R)
 d$ANSWER_R <- as.factor(d$ANSWER_R)
@@ -48,32 +86,23 @@ d$handedness <- as.factor(d$handedness)
 d$motherTongue <- as.factor(d$motherTongue)
 d$country <- as.factor(d$country)
 d$prolific <- as.factor(d$prolific)
-d$map_horiAA300 <- as.factor(d$map_horiAA300)
+#d$map_horiAA300 <- as.factor(d$map_horiAA300)
 d$rt <- as.numeric(d$rt)
 
-# detect if it's brac01 or brac02 or between subjs from the colour of frame and cue
-
-#d <- d[d$exp == "BRAC2",]
-
-if (length(unique(d$framecolor)) == 3){
-  B = "B1B2"
-} else if (unique(d$framecolor)[1] == "black"){
-  B = "B1"
-} else if (unique(d$cuecolor)[1] == "black"){
-  B = "B2"
-}
-print(B)
-
-# Prepare the 2 datsets for RTs and errors analyses
+# Prepare the 2 datsets for RTs and errors analyses -------------------------------------------------------
 
 # create a column useful afterwards
 d$respRepetitions <- 0
 
+# fix the missing values of sex and handedness (1 pp) with most likely value
+d$handedness[d$handedness == "Other (please specify)"] <- "right-handed"
+d$sex[d$sex == "I'd rather not say"] <- "male"
+
 # dataset clening for rts analyses
+cat("Fast trials were", sum(d$rt < 200), "\n")
 drt <- d[(d$task_R != 99 & d$rt > 200 & !is.na(d$Attempt == 1)),]
 drt <- drt[!(drt$error == 1 | drt$error_R == 1),]
-
-drt$logRT <- log(drt$rt)
+cat("In total removed", (dim(d)[1] - dim(drt)[1])/dim(d)[1], "of the observations \n")
 
 for (j in unique(drt$pp)){
   drt[drt$pp == j, "respRepetitions"] <- sum(drt$pp == j & drt$ANSWER_R == 0)
@@ -89,183 +118,356 @@ for (j in unique(de$pp)){
 
 drt$respRepetitions <- as.numeric(drt$respRepetition)
 de$respRepetitions <- as.numeric(de$respRepetition)
+# stadardize these for error model --> helps it to converge
+de$respRepetitions <- (de$respRepetitions - mean(de$respRepetitions))/sd(de$respRepetitions)
 
-# RTs -------------------------------
+# Plot errors distribution across pps -----------------------------------------------------------------------
 
-# model with control variables
+# calculate mean for each pp
+errM <- group_my(d, error, pp, task_R, ANSWER_R, context_R, cocoa)
+pps <- group_my(errM, meanerror, pp)
+cat("Mean error rate was",  mean(pps$meanmeanerror), "plus or minus", sd(pps$meanmeanerror))
 
-if (B == "B1" | B == "B2"){
-  # same model for the 2 studies; either country or prolific, not both
-  mod2 <- lmer(log(rt) ~ task_R*ANSWER_R*context_R*cocoa + blockNum + age + sex + map_horiAA300 +
-                 handedness + prolific + respRepetitions + (1|pp), data= drt, REML=F)
+png(paste0(figDir, B, "_errorsDistr", ".png"), width = 1500, height = 1000, res = 200)
+hist(pps$meanmeanerror, col=45, main = "Distribution of error rates", xlab= "error rate", 
+     breaks = seq(0,0.3,0.01))
+abline(v= mean(pps$meanmeanerror) + sd(pps$meanmeanerror)*2, col= "darkblue", lwd= 2, lty = "dashed")
+dev.off()
+
+# Remove outliers -------------------------------------------------------------------------------------------
+# who are the worst ones
+
+ppsWorse <- as.data.frame(pps[pps$meanmeanerror > (mean(pps$meanmeanerror) + sd(pps$meanmeanerror)*2), "pp"])
+
+for (ppRem in ppsWorse$pp){
+  #print(ppRem)
+  drt <- drt[!drt$pp == ppRem, ]
+  de <- de[!de$pp == ppRem, ]
+}
+
+# Distribution RTs -----------------------------------------------------------------------------------------
+
+png(paste0(figDir, B, "_RTsDistr", ".png"), width = 1500, height = 1000, res = 200)
+par(mfrow=c(1,2))
+hist(drt$rt, freq= F, col= "pink", main = "", xlab= "RTs values")
+curve(dnorm(x, mean(drt$rt), sd(drt$rt)), add= T, col= 2, lwd= 2)
+hist(log(drt$rt), freq= F, col= "pink", main = "", xlab= "log RTs")
+curve(dnorm(x, mean(log(drt$rt)), sd(log(drt$rt))), add= T, col= 2, lwd= 2)
+dev.off()
+
+
+# RTs Models ---------------------------------------------------------------------------------------------
+
+# Check hierarchical structure of the data
+modLin <- lm(log(rt) ~ 1, data= drt)
+
+modEmpty <- lmer(log(rt) ~ 1 + (1|pp), data= drt, REML=F)
+summary(modEmpty)
+
+modEmpty1 <- lmer(log(rt) ~ 1 + (1|pp) + (1|stimulus), data= drt, REML=F)
+summary(modEmpty1)
+
+# B1= empty1 better
+# B2= empty1 better
+# between empty better
+anova(modEmpty1, modEmpty)
+
+# Model with control variables
+
+if (B == "B1"){
+  mod1 <- lmer(log(rt) ~ task_R*ANSWER_R*context_R*cocoa + (1|pp) + (1|stimulus), data= drt, REML=F)
+  # either country or prolific, not both
+  mod2 <- lmer(log(rt) ~ task_R*ANSWER_R*context_R*cocoa + blockNum + sex + Participant.Browser + 
+                 Participant.OS +handedness + prolific + respRepetitions + (1|pp) + (1|stimulus), 
+               data= drt, REML=F)
+} else if (B == "B2") {
+  # here we don't have map_hori_AA
+  #mod1 <- lmer(log(rt) ~ task_R*ANSWER_R*context_R*cocoa + (1|pp), data= drt, REML=F)
+  mod2 <- lmer(log(rt) ~ task_R*ANSWER_R*context_R*cocoa + blockNum + sex + Participant.Browser + 
+                 Participant.OS +handedness + prolific + respRepetitions + (1|pp) + (1|stimulus), 
+               data= drt, REML=F)
 } else if (B == "B1B2"){
-  mod2 <- lmer(log(rt) ~ task_R*ANSWER_R*context_R*cocoa*exp + blockNum + age + sex + 
-                 handedness + prolific + map_horiAA300 + respRepetitions + (1|pp),
+  mod2 <- lmer(log(rt) ~ task_R*ANSWER_R*context_R*cocoa*exp + blockNum + sex + Participant.Browser + 
+                 Participant.OS +handedness + prolific + respRepetitions + (1|pp) + (1|stimulus),
                data= drt, REML=F)
 }
 
-#mod1 <- lmer(log(rt) ~ task_R*ANSWER_R*context_R*cocoa + (1|pp), data= drt, REML=F)
-
 summary(mod2)
+summary(mod1)
 # Note:
 # in B1B2, block num doens't interact signifcantly with ANS*task - so no evidence they learnt 
 # about different frequency of resp sw versus resp rep
 
 # save the table
-#write.csv2(write_pvalues(mod2, "exp"), file= paste0(tabDir, B, "_mod2", ".csv"))
+write.table(write_pvalues(mod2, "exp"), file= paste0(tabDir, B, "_mod2", ".csv"), sep = ";", dec = ".")
 
-# calculate marginal means
+# Emmeans ---------------------------------------------------------------------------------------------
+
+# Calculate marginal means
 if (B == "B1" | B == "B2"){
-  estMeans <- emmeans(
-    mod2, c("task_R", "cocoa", "context_R", "ANSWER_R"), lmer.df = "satterthwaite", data = drt)
-  # estM_taskContext <- emmeans(
-  #   mod2, c("task_R", "context_R"), lmer.df = "satterthwaite", data = drt)
-  estM_taskContextCocoa <- emmeans(
-    mod2, c("task_R", "context_R", "cocoa"), lmer.df = "satterthwaite", data = drt, type = "response")
+  estMeans <- emmeans(mod2, c("task_R", "ANSWER_R", "context_R", "cocoa"), lmer.df = "satterthwaite", 
+                      data = drt, type = "response")
 } else if (B== "B1B2"){
   estMeans <- emmeans(
-    mod2, c("task_R", "cocoa", "context_R", "exp"), lmer.df = "satterthwaite", data = drt) 
+    mod2, c("task_R", "ANSWER_R", "cocoa", "context_R", "exp"), lmer.df = "satterthwaite", data = drt,
+    type = "response") 
 }
 
-#write.table(estMeans, paste0(tabDir, B, "_estMeansRts", ".csv"), dec = ".", sep = ";", row.names = F)
+# Check what emmeans does - not the same as the one below, it takes into account the other variables and, for each
+# it first creates a group for each comb of ALL the variables, and then average them acc.ng the require vars
 
-# estMeans$exp.media <- exp(estMeans$emmean)
-# estMeans$exp.se <- exp(estMeans$SE)
+# ANOVA RTs --------------------------------------------------------------------------------------------------
+
+# Run with aov No, aov uses type I wh is not ok for interactions and unbalanced designs
+
+# Wrap a linear model in an ANOVA output
+# aov2 <- car::Anova(lm(log(rt) ~ task_R*ANSWER_R*context_R*cocoa , drt), type = "III")
+# aov2
 
 
-# Check what emmeans does
+# Plot Rts ---------------------------------------------------------------------------------------------
 
-# # new df with predicted values and relevant variables
-# pred <- fitted(mod2)
-# dnew <- cbind(pred, drt[,c("task_R", "ANSWER_R", "context_R", "cocoa")])
+# Plot Estimates above true values 
+if (B == "B1" | B== "B2"){
+  e <-emmip(estMeans, ANSWER_R ~ task_R | context_R + cocoa)
+  xy <- e$data[,c(8,9)]
+  
+  # Calculate raw means, the order cpndtns arguments is to match the one of emmip data
+  gbl <- group_my(drt, rt, pp, task_R, ANSWER_R, context_R, cocoa)
+  condtns <- group_my(gbl, meanrt, task_R, cocoa, context_R, ANSWER_R)
+  names(condtns)[names(condtns) == "meanmeanrt"] <- "yvar"
+  condtns <- cbind(condtns, xy)
+  
+  #draw it
+  png(paste0(figDir, B, "_mod2", ".png"), width = 1200, height = 1000, res = 200)  
+  emmip(estMeans, ANSWER_R ~ task_R | context_R + cocoa)+
+    geom_point(data = condtns, aes(color = ANSWER_R, alpha = 0.85))+
+    theme_bw()
+  dev.off()
+  
+} else if(B == "B1B2"){
+  # get data of the emmip graph and extract a useful column
+  e <-emmip(estMeans, ANSWER_R ~ task_R | exp + cocoa + context_R)
+  xy <- e$data[,c(9,10)]
+  
+  # Calculate raw means, the order cpndtns arguments is to match the one of emmip data
+  gbl <- group_my(drt, rt, pp, task_R, ANSWER_R, context_R, cocoa, exp)
+  condtns <- group_my(gbl, meanrt, task_R, context_R, cocoa, exp, ANSWER_R)
+  names(condtns)[names(condtns) == "meanmeanrt"] <- "yvar"
+  condtns <- cbind(condtns, xy)
+  
+  #draw it
+  png(paste0(figDir, B, "_mod2", ".png"), width = 1200, height = 1000, res = 200)  
+  emmip(estMeans, ANSWER_R ~ task_R | exp + cocoa + context_R)+
+    geom_point(data = condtns, aes(color = ANSWER_R, alpha = 0.85))+
+    theme_bw()
+  dev.off()
+  
+}
+
+# # Plot with emmip
 # 
-# tst <- group_my(dnew, pred, task_R, ANSWER_R, context_R, cocoa)
+# png(paste0(figDir, B, "_mod2_rt", ".png"), width = 1200, height = 1000, res = 200)
+# emmip(estMeans, ANSWER_R ~ task_R | exp + cocoa + context_R) +
+#   #geom_errorbar(aes(ymin  = yvar  - SE, ymax  = yvar + SE), width = 0.2, size  = 0.1, 
+#                 #position = pd,color = "black") +
+#   theme_bw() 
+# dev.off()
 
+# Contrasts RTs ---------------------------------------------------------------------------------------------
 
-# Plot Rts -------- 
-
-# general plot with all of the conditions - no experiment
-
-png(paste0(figDir, B, "mod2_rts", ".png"), width = 1200, height = 1000, res = 200)
-ggplot(as.data.frame(estMeans), aes(x= task_R, y = emmean, fill = ANSWER_R)) +
-#ggplot(as.data.frame(estMeans), aes(x= task_R, y = emmean, group = ANSWER_R)) +
-  geom_col(width = 0.7, color = "black", position = pd) +
-  # geom_line(aes(color = ANSWER_R))+
-  # geom_point(aes(color = ANSWER_R))+
-  #geom_errorbar(aes(ymin  = exp.media - exp.se, ymax  = exp.media + exp.se), width = 0.3, size  = 0.7, position = pd,color = "black") +
-  geom_errorbar(aes(ymin  = emmean  - SE, ymax  = emmean + SE), width = 0.3, size  = 0.7, position = pd,color = "black") +
-  theme_bw() +
-  theme(axis.title = element_text(face = "bold")) +
-  coord_cartesian(ylim=c(6.3,6.8)) +
-  ylab("Mean RTs") +
-  xlab("Task sequence") +
-  facet_wrap(~context_R + cocoa)
-dev.off()
-
-# plot Task and Context (and cocoa)
-
-png(paste0(figDir, B, "mod2_TCCo", ".png"), width = 1200, height = 1000, res = 200)
-ggplot(as.data.frame(estM_taskContextCocoa), aes(x= task_R, y = response, fill = context_R)) +
-  geom_col(width = 0.7, color = "black", position = pd) +
-  #geom_errorbar(aes(ymin  = exp.media - exp.se, ymax  = exp.media + exp.se), width = 0.3, size  = 0.7, position = pd,color = "black") +
-  # geom_line(aes(color = context_R))+
-  # geom_point(aes(color = context_R))+
-  geom_errorbar(aes(ymin  = response  - SE, ymax  = response + SE), width = 0.3, size  = 0.7, position = pd,color = "black") +
-  theme_bw() +
-  theme(axis.title = element_text(face = "bold")) +
-  coord_cartesian(ylim=c(540,800)) +
-  scale_fill_manual(values= c("yellow", "green"))+
-  facet_wrap(~ cocoa)+
-  ylab("Mean RTs") +
-  xlab("Task sequence")
-dev.off()
-
-# plot everything apart from response
-
-png(paste0(figDir, B, "mod2_noANS", ".png"), width = 1200, height = 1000, res = 200)
-ggplot(as.data.frame(estMeans), aes(x= task_R, y = emmean, fill = context_R)) +
-  geom_col(width = 0.7, color = "black", position = pd) +
-  #geom_errorbar(aes(ymin  = exp.media - exp.se, ymax  = exp.media + exp.se), width = 0.3, size  = 0.7, position = pd,color = "black") +
-  # geom_line(aes(color = context_R))+
-  # geom_point(aes(color = context_R))+
-  geom_errorbar(aes(ymin  = emmean  - SE, ymax  = emmean + SE), width = 0.3, size  = 0.7, position = pd,color = "black") +
-  theme_bw() +
-  theme(axis.title = element_text(face = "bold")) +
-  coord_cartesian(ylim=c(6.3,6.9)) +
-  scale_fill_manual(values= c("purple", "lightblue"))+
-  facet_wrap(~ exp + cocoa)+
-  ylab("Mean RTs") +
-  xlab("Task sequence")
-dev.off()
-
-# -------- 
-# Contrasts
-if (B== "B1" | B== "B2"){
+if (B== "B2"){
   postHoc <- contrast(estMeans, "consec", simple = "each", combine = TRUE, adjust = "mvt")
-  ciao <- pairs(estMeans, simple = "task_R")
-  ciao1 <- pairs(estMeans, by = c("cocoa", "context_R"))
+  #ciao <- pairs(estMeans, simple = "task_R")
+  #ciao1 <- pairs(estMeans, by = c("cocoa", "context_R"))
+  bindingEffect <- contrast(emmeans(mod2, ~ task_R*ANSWER_R | context_R + cocoa), 
+                            interaction = "pairwise", type = "response")
+  taskXcontext <- contrast(emmeans(mod2, ~ task_R*context_R| ANSWER_R + cocoa), 
+                                            interaction = "pairwise", type = "response")
+  cocoa <- contrast(emmeans(mod2, ~ cocoa|task_R + ANSWER_R + context_R + cocoa), 
+                            interaction = "pairwise", type = "response")
+
 } else if (B == "B1B2") {
-  postHoc <- contrast(estMeans, "consec", simple = "each", combine = TRUE, adjust = "mvt")
+  #postHoc <- contrast(estMeans, "consec", simple = "each", combine = TRUE, adjust = "mvt")
+  bindingEffect <- contrast(emmeans(mod2, ~ task_R*ANSWER_R | context_R + cocoa + exp), 
+                            interaction = "pairwise", type = "response")
   }
 
 # save contrasts table
 write.table(postHoc, paste0(tabDir, B, "_postHoc_Rts", ".csv"), dec = ".", sep = ";", row.names = F)
-# -------- 
+
+# Build custom contrasts
+# https://aosmith.rbind.io/2019/04/15/custom-contrasts-emmeans/
+
+# Compare the Delta of the task sw cost in resp rep and resp sw --> same as interaction of the mdel
+# take the estMeans and build vectors that "pick" the specific condition
+
+trep <- rep(0, 16)
+trep[seq(1, 16, 2)] <- 1
+
+rrep <- rep(0, 16)
+rrep[c(1,2,5,6,9,10,13,14)] <- 1
+
+reprep <- as.numeric(trep==rrep & trep == 1)
+swrep <- as.numeric(trep!=rrep & trep == 0)
+repsw <- as.numeric(trep!=rrep & trep == 1)
+swsw <- as.numeric(trep==rrep & trep == 0)
+
+# binding must be done aoutside to see in the different panels
+#swCost <- contrast(estMeans, method = list("Sw_costs" = tsw - trep))
+
+# Check if resp sw cost in task switch are different in cocoa = 300 and = 0
+swrep0 <- c(swrep[c(1:8)], rep(0,8))
+swrep300 <- c(rep(0,8), swrep[c(9:16)])
+
+swsw0 <- c(swsw[c(1:8)], rep(0,8))
+swsw300 <- c(rep(0,8), swsw[c(9:16)])
+
+#respCocoa <- contrast(estMeans, method = list("RR_cocoa" = (swrep0 - swsw0) - (swrep300 - swsw300)))
+
+# Check distractor-resp binding in task rep: delta betw resp rep and sw when context rep or sw
+# repreprep = task rep + resp rep + context rep
+repreprep <- c(reprep[1:4], rep(0,4), reprep[9:12], rep(0,4))
+repswrep <- c(repsw[1:4], rep(0,4), repsw[9:12], rep(0,4))
+
+reprepsw <- c(rep(0,4), reprep[5:8], rep(0,4), reprep[13:16])
+repswsw <-  c(rep(0,4), repsw[5:8], rep(0,4), repsw[13:16])
+
+#distr_resp <- contrast(estMeans, method = list("RR_taskSw" = (repswrep - repreprep) - (repswsw -reprepsw)))
+
+# Check diff in the lowest panel: resp switch & context switch in task rep with cocoa 300 or 0
+zero <- rep(0,16)
+zero[7] <- 1
+trec <- rep(0,16)
+trec[15] <- 1
+
+#cocoaEff <- contrast(estMeans, method = list("zeroMinusTrec" = zero - trec))
+
+# Run the contrasts all together to adjust for multiple comparisons
+# binding must be done outside
+tot <- contrast(estMeans, method = list("RR_cocoa" = (swrep0 - swsw0) - (swrep300 - swsw300),
+                                        "DR_bind" = (repswrep - repreprep) - (repswsw -reprepsw),
+                                        "respSw_cocoa" = zero - trec))
 
 
-# Errors -------------------------------
+# Errors -------------------------------------------------------------------------------------------------
+
+# Check Hierarchical structure
+
+modLog <- glm(error ~ 1, family="binomial", data= de)
+summary(modLog)
+
+modeEmpty <- glmer(error ~ 1 + (1|pp), family="binomial", control = glmerControl(optimizer="bobyqa"), 
+                   data= de)
+summary(modeEmpty)
+
+modeEmpty1 <- glmer(error ~ 1 + (1|pp) + (1|stimulus), family="binomial", control = glmerControl(optimizer="bobyqa"), 
+                               data= de)
+summary(modeEmpty1)
+
+# B1 with pp only
+# B2 : with stimulus; empty better than logit and with stimulus better than w/o
+# B1B2: with stimulus
+anova(modeEmpty, modeEmpty1)
 
 # model withOUT control variables
-if (B == "B1" | B == "B2"){
-  #mode1 <- glm(error ~ task_R*ANSWER_R*context_R + context_R*cocoa, family="binomial", data= de)
-  mode1 <- glmer(error ~ task_R*ANSWER_R*context_R*cocoa + (1|pp), family="binomial", control=glmerControl(optimizer="bobyqa"), data= de)
+if (B == "B1"){
+  # mode1 <- glmer(error ~ task_R*ANSWER_R*context_R*cocoa + (1|pp), family="binomial", 
+  #                control=glmerControl(optimizer="bobyqa"), data= de)
+  mode2 <- glmer(error ~ task_R*ANSWER_R*context_R*cocoa + blockNum + sex + Participant.Browser + 
+                   Participant.OS +handedness + prolific + respRepetitions + (1|pp), family="binomial", 
+                 control=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)), data= de)
+} else if (B == "B2") {
+  mode1 <- glmer(error ~ task_R*ANSWER_R*context_R*cocoa + (1|pp) + (1|stimulus), family="binomial", 
+                 control=glmerControl(optimizer="bobyqa"), data= de)
+  mode2 <- glmer(error ~ task_R*ANSWER_R*context_R*cocoa + blockNum + sex + Participant.Browser + 
+                   Participant.OS +handedness + prolific + respRepetitions + (1|pp), family="binomial", 
+                 control=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)), data= de)
 } else if (B == "B1B2") {
-  mode1 <- glmer(error ~ task_R*ANSWER_R*context_R*cocoa*exp + (1|pp), 
-                 family="binomial", control=glmerControl(optimizer="bobyqa"), data= de)
-  
-}
+  # since "maxfun < 10 * length(par)^2 is not recommended." I set maxfun to 2e5
+  mode2 <- glmer(error ~ task_R*ANSWER_R*context_R*cocoa*exp + blockNum + sex + Participant.Browser + 
+                   Participant.OS +handedness + prolific + respRepetitions + (1|pp) + (1|stimulus), 
+                 family="binomial", control=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)), data= de)
+  }
 
 summary(mode1)
-#OddRatio_tab(mode1)
+summary(mode2)
 
-# calculate marginal means
+# save output
+write.table(OddRatio_tab(mode2), file= paste0(tabDir, B, "_mode2_err", ".csv"), sep = ";", dec = ".")
+
+# # MOdel with control variables - non gliela fa
+# ss <- getME(mode2,c("theta","fixef"))
+# mode3 <- update(mode2, start = ss, control=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+
+# Calculate marginal means ------------
 if (B == "B1" | B == "B2"){
-  estMeans <- emmeans(
-    mode1, c("task_R", "cocoa", "context_R", "ANSWER_R"), lmer.df = "satterthwaite", data = de)
-  #estM_taskContext <- emmeans(mod2, c("task_R", "context_R"), lmer.df = "satterthwaite", data = drt)
+  estMeans <- emmeans(mode2, c("task_R", "ANSWER_R", "context_R", "cocoa"), lmer.df = "satterthwaite",
+                      data = de, type = "response")
+  swCosts <- emmeans(mode2,  ~ task_R, lmer.df = "satterthwaite", data = de, type = "response")
+  resp_cocoa <- emmeans(mode2,  c("ANSWER_R", "cocoa"), lmer.df = "satterthwaite", data = de, 
+    type = "response")
 } else if (B == "B1B2"){
-  estMeans <- emmeans(
-    mode1, c("task_R", "cocoa", "context_R", "ANSWER_R"), lmer.df = "satterthwaite", data = de)
+  estMeans <- emmeans(mode2, c("task_R", "ANSWER_R", "context_R", "cocoa", "exp"), lmer.df = "satterthwaite",
+                      data = de, type = "response")
 }
+
 
 # Plot errors -------- 
 
-# general plot with all of the conditions - no experiment
-
-png(paste0(figDir, B, "mode1_err", ".png"), width = 1200, height = 1000, res = 200)
-ggplot(as.data.frame(estMeans), aes(x= task_R, y = abs(emmean), fill = ANSWER_R)) +
-  geom_col(width = 0.7, color = "black", position = pd) +
-  #geom_errorbar(aes(ymin  = exp.media - exp.se, ymax  = exp.media + exp.se), width = 0.3, size  = 0.7, position = pd,color = "black") +
-  geom_errorbar(aes(ymin  = abs(emmean)  - SE, ymax  = abs(emmean) + SE), width = 0.3, size  = 0.7, position = pd,color = "black") +
-  theme_bw() +
-  theme(axis.title = element_text(face = "bold")) +
-  #coord_cartesian(ylim=c(-3.5, -1.5)) +
-  coord_cartesian(ylim=c(1.5, 3.5)) +
-  ylab("Mean logOR") +
-  xlab("Task sequence") +
-  facet_wrap(~context_R + cocoa)
-dev.off()
-
-# plot with emmip
-png(paste0(figDir, B, "mode1_err", ".png"), width = 1200, height = 1000, res = 200)
-emmip(estMeans, ANSWER_R ~ task_R | context_R + cocoa) +
-geom_errorbar(aes(ymin  = yvar  - SE, ymax  = yvar + SE), width = 0.2, size  = 0.1, 
-              position = pd,color = "black") +
-theme_bw() 
-dev.off()
-
-# -------- 
-# Contrasts
-if (B== "B1" | B== "B2"){
-  postHoc <- contrast(estMeans, "consec", simple = "each", combine = TRUE, adjust = "mvt")
+if (B == "B1" | B== "B2"){
+  e <-emmip(estMeans, ANSWER_R ~ task_R | context_R + cocoa)
+  xy <- e$data[,c(8,9)]
+  
+  # Calculate raw means, the order cpndtns arguments is to match the one of emmip data
+  gbl <- group_my(de, error, pp, task_R, ANSWER_R, context_R, cocoa)
+  condtns <- group_my(gbl, meanerror, task_R, cocoa, context_R, ANSWER_R)
+  names(condtns)[names(condtns) == "meanmeanerror"] <- "yvar"
+  condtns <- cbind(condtns, xy)
+  
+  #draw it
+  png(paste0(figDir, B, "_mode2", ".png"), width = 1200, height = 1000, res = 200)  
+  emmip(estMeans, ANSWER_R ~ task_R | context_R + cocoa)+
+    geom_point(data = condtns, aes(color = ANSWER_R, alpha = 0.85))+
+    theme_bw()
+  dev.off()
+  
+} else if(B == "B1B2"){
+  # get data of the emmip graph and extract a useful column
+  e <-emmip(estMeans, ANSWER_R ~ task_R | exp + cocoa + context_R)
+  xy <- e$data[,c(9,10)]
+  
+  # Calculate raw means
+  gbl <- group_my(de, error, pp, task_R, ANSWER_R, context_R, cocoa, exp)
+  condtns <- group_my(gbl, meanerror, task_R, context_R, cocoa, exp, ANSWER_R)
+  names(condtns)[names(condtns) == "meanmeanerror"] <- "yvar"
+  condtns <- cbind(condtns, xy)
+  
+  #draw it
+  png(paste0(figDir, B, "_mode2", ".png"), width = 1200, height = 1000, res = 200)  
+  emmip(estMeans, ANSWER_R ~ task_R | exp + cocoa + context_R)+
+    geom_point(data = condtns, aes(color = ANSWER_R, alpha = 0.85))+
+    #scale_color_manual(values= c("ivory3", "ivory4"))+
+    theme_bw()
+  dev.off()
+  
 }
+
+
+
+# Contrasts -------- 
+if (B== "B1" | B== "B2"){
+  #postHoc <- contrast(estMeans, "consec", simple = "each", combine = TRUE, adjust = "mvt")
+  bindingEffect <- contrast(emmeans(mode2, ~ task_R*ANSWER_R | context_R + cocoa), 
+                            interaction = "pairwise", type = "response")
+  resp_Cocoa_contr <- emmeans(mode2, pairwise ~ cocoa*ANSWER_R | context_R,
+                             lmer.df = "satterthwaite", data = de, type= "response")
+} else if (B== "B1"){
+  bindingEffect <- contrast(emmeans(mode2, ~ task_R*ANSWER_R | context_R + cocoa + exp), 
+                            interaction = "pairwise", type = "response")
+  
+  # tot <- contrast(estMeans, method = list("delta_Sw_costs" = (swrep - reprep) - (swsw - repsw),
+  #                                         "Sw_costs" = tsw - trep))
+  }
+
+
