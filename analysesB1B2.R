@@ -1,7 +1,7 @@
 # Load packages -------------------------------
 
 if(!require(pacman)) install.packages("pacman")
-pacman::p_load("haven", "dplyr", "lme4", "reshape2", "ggplot2", "wesanderson", "afex", "emmeans")
+pacman::p_load("haven", "dplyr", "lme4", "reshape2", "ggplot2", "wesanderson", "afex", "emmeans", "tables")
 
 select <- dplyr::select
 filter <- dplyr::filter
@@ -23,8 +23,8 @@ source("C://Users//Elena//Documents//AA_PhD//Projects//expra2020_faces//modelsFu
 
 # Load and prepare Data ----------------------------------------------------------------------------------------
 
-#B = "B1B2"
-B = "B1"
+B = "B1B2"
+#B = "B1"
 #B = "B2"
 
 # Load B1 and pick 2 people form rwth only ----------------------------------------------------------------------
@@ -276,26 +276,6 @@ if (B == "B1" | B== "B2"){
 
 # Contrasts RTs ---------------------------------------------------------------------------------------------
 
-if (B== "B2"){
-  postHoc <- contrast(estMeans, "consec", simple = "each", combine = TRUE, adjust = "mvt")
-  #ciao <- pairs(estMeans, simple = "task_R")
-  #ciao1 <- pairs(estMeans, by = c("cocoa", "context_R"))
-  bindingEffect <- contrast(emmeans(mod2, ~ task_R*ANSWER_R | context_R + cocoa), 
-                            interaction = "pairwise", type = "response")
-  taskXcontext <- contrast(emmeans(mod2, ~ task_R*context_R| ANSWER_R + cocoa), 
-                                            interaction = "pairwise", type = "response")
-  cocoa <- contrast(emmeans(mod2, ~ cocoa|task_R + ANSWER_R + context_R + cocoa), 
-                            interaction = "pairwise", type = "response")
-
-} else if (B == "B1B2") {
-  #postHoc <- contrast(estMeans, "consec", simple = "each", combine = TRUE, adjust = "mvt")
-  bindingEffect <- contrast(emmeans(mod2, ~ task_R*ANSWER_R | context_R + cocoa + exp), 
-                            interaction = "pairwise", type = "response")
-  }
-
-# save contrasts table
-write.table(postHoc, paste0(tabDir, B, "_postHoc_Rts", ".csv"), dec = ".", sep = ";", row.names = F)
-
 # Build custom contrasts
 # https://aosmith.rbind.io/2019/04/15/custom-contrasts-emmeans/
 
@@ -316,16 +296,14 @@ swsw <- as.numeric(trep==rrep & trep == 0)
 # binding must be done aoutside to see in the different panels
 #swCost <- contrast(estMeans, method = list("Sw_costs" = tsw - trep))
 
-# Check if resp sw cost in task switch are different in cocoa = 300 and = 0
+# RR_cocoa: Check if resp sw cost in task switch are different in cocoa = 300 and = 0
 swrep0 <- c(swrep[c(1:8)], rep(0,8))
 swrep300 <- c(rep(0,8), swrep[c(9:16)])
 
 swsw0 <- c(swsw[c(1:8)], rep(0,8))
 swsw300 <- c(rep(0,8), swsw[c(9:16)])
 
-#respCocoa <- contrast(estMeans, method = list("RR_cocoa" = (swrep0 - swsw0) - (swrep300 - swsw300)))
-
-# Check distractor-resp binding in task rep: delta betw resp rep and sw when context rep or sw
+# DR_bind: Check distractor-resp binding in task rep: delta betw resp rep and sw when context rep or sw
 # repreprep = task rep + resp rep + context rep
 repreprep <- c(reprep[1:4], rep(0,4), reprep[9:12], rep(0,4))
 repswrep <- c(repsw[1:4], rep(0,4), repsw[9:12], rep(0,4))
@@ -333,21 +311,51 @@ repswrep <- c(repsw[1:4], rep(0,4), repsw[9:12], rep(0,4))
 reprepsw <- c(rep(0,4), reprep[5:8], rep(0,4), reprep[13:16])
 repswsw <-  c(rep(0,4), repsw[5:8], rep(0,4), repsw[13:16])
 
-#distr_resp <- contrast(estMeans, method = list("RR_taskSw" = (repswrep - repreprep) - (repswsw -reprepsw)))
-
-# Check diff in the lowest panel: resp switch & context switch in task rep with cocoa 300 or 0
+# respSw_cocoa: Check diff in the lowest panel: resp switch & context switch in task rep with cocoa 300 or 0
 zero <- rep(0,16)
 zero[7] <- 1
 trec <- rep(0,16)
 trec[15] <- 1
 
+# According to the study, different post-hoc
+if (B == "B1"){
+  
+  bindingEffect <- contrast(emmeans(mod2, ~ task_R*ANSWER_R | context_R + cocoa), 
+                            interaction = "pairwise", type = "response")
+  #taskXcontext <- contrast(emmeans(mod2, ~ task_R*context_R| ANSWER_R + cocoa), 
+  #                         interaction = "pairwise", type = "response")
+  #DR_bind <- contrast(emmeans(mod2, ~ context_R*ANSWER_R | task_R + cocoa), 
+  #                          interaction = "pairwise", type = "response")
+  
+  # Run the contrasts all together to adjust for multiple comparisons
+  # binding must be done outside
+  tot <- contrast(estMeans, method = list("RR_cocoa" = (swrep0 - swsw0) - (swrep300 - swsw300),
+                                          "DR_bind" = (repswrep - repreprep) - (repswsw -reprepsw),
+                                          "respSw_cocoa" = zero - trec))
+
+  }else if (B== "B2"){
+    
+  bindingEffect <- contrast(emmeans(mod2, ~ task_R*ANSWER_R | context_R + cocoa), 
+                            interaction = "pairwise", type = "response")
+  cocoa <- contrast(emmeans(mod2, ~ cocoa|task_R + ANSWER_R + context_R + cocoa), 
+                            interaction = "pairwise", type = "response")
+
+} else if (B == "B1B2") {
+  #postHoc <- contrast(estMeans, "consec", simple = "each", combine = TRUE, adjust = "mvt")
+  bindingEffect <- contrast(emmeans(mod2, ~ task_R*ANSWER_R | context_R + cocoa + exp), 
+                            interaction = "pairwise", type = "response")
+  taskExp <- contrast(emmeans(mod2, ~ task_R*exp | context_R + cocoa + ANSWER_R), 
+                            interaction = "pairwise", type = "response")
+  }
+
+# save contrasts table
+write.table(postHoc, paste0(tabDir, B, "_postHoc_Rts", ".csv"), dec = ".", sep = ";", row.names = F)
+
+
+
 #cocoaEff <- contrast(estMeans, method = list("zeroMinusTrec" = zero - trec))
 
-# Run the contrasts all together to adjust for multiple comparisons
-# binding must be done outside
-tot <- contrast(estMeans, method = list("RR_cocoa" = (swrep0 - swsw0) - (swrep300 - swsw300),
-                                        "DR_bind" = (repswrep - repreprep) - (repswsw -reprepsw),
-                                        "respSw_cocoa" = zero - trec))
+
 
 
 # Errors -------------------------------------------------------------------------------------------------
@@ -396,24 +404,17 @@ summary(mode2)
 # save output
 write.table(OddRatio_tab(mode2), file= paste0(tabDir, B, "_mode2_err", ".csv"), sep = ";", dec = ".")
 
-# # MOdel with control variables - non gliela fa
-# ss <- getME(mode2,c("theta","fixef"))
-# mode3 <- update(mode2, start = ss, control=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
-
-# Calculate marginal means ------------
+# Calculate marginal means ----------------------------------------------------------------------------------
 if (B == "B1" | B == "B2"){
   estMeans <- emmeans(mode2, c("task_R", "ANSWER_R", "context_R", "cocoa"), lmer.df = "satterthwaite",
                       data = de, type = "response")
-  swCosts <- emmeans(mode2,  ~ task_R, lmer.df = "satterthwaite", data = de, type = "response")
-  resp_cocoa <- emmeans(mode2,  c("ANSWER_R", "cocoa"), lmer.df = "satterthwaite", data = de, 
-    type = "response")
 } else if (B == "B1B2"){
   estMeans <- emmeans(mode2, c("task_R", "ANSWER_R", "context_R", "cocoa", "exp"), lmer.df = "satterthwaite",
                       data = de, type = "response")
 }
 
 
-# Plot errors -------- 
+# Plot errors -------------------------------------------------------------------------------------------------
 
 if (B == "B1" | B== "B2"){
   e <-emmip(estMeans, ANSWER_R ~ task_R | context_R + cocoa)
@@ -455,19 +456,119 @@ if (B == "B1" | B== "B2"){
 
 
 
-# Contrasts -------- 
-if (B== "B1" | B== "B2"){
+# Contrasts Errors -------------------------------------------------------------------------------------------- 
+
+# For custom contrasts
+tsw <- factor2numeric(summary(estMeans)[,"task_R"])
+rsw <- factor2numeric(summary(estMeans)[,"ANSWER_R"])
+csw <- factor2numeric(summary(estMeans)[,"context_R"])
+co0 <- c(rep(1,8), rep(0,8))
+
+if (B== "B1"){
   #postHoc <- contrast(estMeans, "consec", simple = "each", combine = TRUE, adjust = "mvt")
   bindingEffect <- contrast(emmeans(mode2, ~ task_R*ANSWER_R | context_R + cocoa), 
                             interaction = "pairwise", type = "response")
-  resp_Cocoa_contr <- emmeans(mode2, pairwise ~ cocoa*ANSWER_R | context_R,
-                             lmer.df = "satterthwaite", data = de, type= "response")
-} else if (B== "B1"){
+  
+  #Custom contrasts
+  
+  # Check how response switch benefit changes
+  
+  # is response switch benefit different from 0 in cocoa300 context rep?
+  rsw_crep_300 <- as.numeric(rsw != csw & rsw == 1 & co0 == 0)
+  rrep_crep_300 <- as.numeric(rsw == csw & rsw == 0 & co0 == 0)
+  
+  # is resp sw benefit diff between cocoa 0 and 300 in context switch?
+  rsw_csw_300 <- as.numeric(rsw == csw & rsw == 1 & co0 == 0)
+  rrep_csw_300 <- as.numeric(rsw != csw & rsw == 0 & co0 == 0)
+  
+  rsw_csw_0 <- as.numeric(rsw == csw & rsw == 1 & co0 == 1)
+  rrep_csw_0 <- as.numeric(rsw != csw & rsw == 0 & co0 == 1)
+  
+  # is resp sw benefit diff in context sw versus rep when cocoa300?
+  rsw_crep_300 <- as.numeric(rsw != csw & rsw == 1 & co0 == 0)
+  rrep_crep_300 <- as.numeric(rsw == csw & rsw == 0 & co0 == 0)
+  
+  # distractor response binding? Gia guardato nel modello e negli altri post-hoc
+  tsw <- factor2numeric(summary(estMeans)[,"task_R"])
+  repswrep <- as.numeric(rsw != tsw & rsw == 1 & csw == 0)
+  repreprep <- as.numeric(rsw == tsw & rsw == 0 & csw == 0)
+  repswsw <- as.numeric(rsw != tsw & rsw == 1 & csw == 1)
+  reprepsw <- as.numeric(rsw == tsw & rsw == 0 & csw == 1)
+  
+  # respSw_cocoa1: resp switch in task rep in the bottom panel
+  zero <- rep(0,16)
+  zero[7] <- 1
+  trec <- rep(0,16)
+  trec[15] <- 1
+  
+  # respSw_cocoa2: resp swith in task rep in the top panel
+  zero2 <- rep(0,16)
+  zero2[3] <- 1
+  trec2 <- rep(0,16)
+  trec2[11] <- 1
+  
+  # respResp_cocoa3: resp swith in task rep in the top panel
+  zero3 <- rep(0,16)
+  zero3[1] <- 1
+  trec3 <- rep(0,16)
+  trec3[9] <- 1
+  
+  
+  tot <- contrast(estMeans, method = list("swBenefit_300Rep" = (rsw_crep_300 - rrep_crep_300),
+              "swBenefit_bottPanels" = (rsw_csw_300 - rrep_csw_300) - (rsw_csw_0 -rrep_csw_0),
+              "swBenefit_leftPanels" = (rsw_csw_300 - rrep_csw_300) - (rsw_crep_300 - rrep_crep_300),
+              "respSw_cocoa" = zero - trec,
+              "respSw_cocoa2" = zero2 - trec2,
+              "respResp_cocoa3" = zero3 - trec3))
+
+  } else if (B == "B2"){
+    bindingEffect <- contrast(emmeans(mode2, ~ task_R*ANSWER_R | context_R + cocoa), 
+                              interaction = "pairwise", type = "response")
+    contCocoa <- contrast(emmeans(mode2, ~ context_R*cocoa | task_R + ANSWER_R ), 
+                              interaction = "pairwise", type = "response")
+    # for the hypothese this would make more sense maybe:
+    #DR_bind <- contrast(emmeans(mode2, ~ context_R*ANSWER_R | task_R + cocoa), 
+    #                      interaction = "pairwise", type = "response")
+    # Custom contrasts
+    
+    # cont_300: task & rep switch & 300, compare context rep & sw
+    reprep300_sw <- as.numeric(rsw == tsw & rsw == 0 & co0 == 0 & csw == 1)
+    reprep300_rep <- as.numeric(rsw == tsw & rsw == 0 & co0 == 0 & csw == 0)
+    
+    # cont_3001: task sw, resp rep & 300, compare context rep & sw
+    swrep300_sw <- as.numeric(rsw != tsw & rsw == 0 & co0 == 0 & csw == 1)
+    swrep300_rep <- as.numeric(rsw != tsw & rsw == 0 & co0 == 0 & csw == 0)
+    
+    tot <- contrast(estMeans, method = list("cont_300" = reprep300_sw - reprep300_rep,
+                                            "cont_3001" = swrep300_sw - swrep300_rep))
+  
+} else if (B== "B1B2"){
   bindingEffect <- contrast(emmeans(mode2, ~ task_R*ANSWER_R | context_R + cocoa + exp), 
                             interaction = "pairwise", type = "response")
-  
-  # tot <- contrast(estMeans, method = list("delta_Sw_costs" = (swrep - reprep) - (swsw - repsw),
-  #                                         "Sw_costs" = tsw - trep))
+  contCocoa <- contrast(emmeans(mode2, ~ context_R*cocoa | task_R + ANSWER_R + exp), 
+                        interaction = "pairwise", type = "response")
+  # more aggreated emmeans to calculate context sw cost independently from the study:
+  estMeans <- emmeans(mode2, c("task_R", "ANSWER_R", "context_R", "cocoa"), lmer.df = "satterthwaite", 
+                      data = de, type = "response")
   }
 
+# Draw a table with all of the Raw means ----------------------------------------------------------------------
+
+predRT <- summary(emmeans(mod2, c("task_R", "ANSWER_R", "context_R", "cocoa", "exp"), lmer.df = "satterthwaite", 
+                data = drt, type = "response"))
+write.table(predRT[,c(1:6)], paste0(tabDir,"predRT.csv"), row.names = F, sep = ";", dec = ".")
+
+predER <- summary(emmeans(mode2, c("task_R", "ANSWER_R", "context_R", "cocoa", "exp"), lmer.df = "satterthwaite", 
+                data = de, type = "response"))
+write.table(predER[,c(1:6)], paste0(tabDir,"predER.csv"), row.names = F, sep = ";", dec = ".")
+
+rawRTs1 <- group_my(drt, rt, task_R, ANSWER_R, context_R, cocoa, exp, pp)
+rawRTs <- group_my(rawRTs1, meanrt, exp, cocoa, context_R, ANSWER_R, task_R)
+rawRTs <- as.data.frame(rawRTs[, c("task_R", "ANSWER_R", "context_R", "cocoa", "exp", "meanmeanrt", "n", "se")])
+write.table(rawRTs, paste0(tabDir,"rawRTs.csv"), row.names = F, sep = ";", dec = ".")
+
+rawER1 <- group_my(de, error, task_R, ANSWER_R, context_R, cocoa, exp, pp)
+rawER <- group_my(rawER1, meanerror, exp, cocoa, context_R, ANSWER_R, task_R)
+rawER <- as.data.frame(rawER[, c("task_R", "ANSWER_R", "context_R", "cocoa", "exp", "meanmeanerror", "n", "se")])
+write.table(rawER, paste0(tabDir,"rawER.csv"), row.names = F, sep = ";", dec = ".")
 
