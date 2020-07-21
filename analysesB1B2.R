@@ -68,7 +68,7 @@ dtot <- rbind(d1, d2)
 
 if(B == "B1"){d <- dtot[dtot$exp == "BRAC1",]
 }else if (B == "B2"){d <- dtot[dtot$exp == "BRAC2",]
-}else if (B== "B"){d <- dtot}
+}else if (B== "B1B2"){d <- dtot}
 
 # Change variables class ----------------------------------------------------------------------------------------
 
@@ -190,6 +190,8 @@ if (B == "B1"){
   mod2 <- lmer(log(rt) ~ task_R*ANSWER_R*context_R*cocoa*exp + blockNum + sex + Participant.Browser + 
                  Participant.OS +handedness + prolific + respRepetitions + (1|pp) + (1|stimulus),
                data= drt, REML=F)
+  mod1 <- lmer(log(rt) ~ task_R*ANSWER_R*context_R*cocoa*exp + (1|pp) + (1|stimulus),
+               data= drt, REML=F)
 }
 
 summary(mod2)
@@ -215,14 +217,6 @@ if (B == "B1" | B == "B2"){
 
 # Check what emmeans does - not the same as the one below, it takes into account the other variables and, for each
 # it first creates a group for each comb of ALL the variables, and then average them acc.ng the require vars
-
-# ANOVA RTs --------------------------------------------------------------------------------------------------
-
-# Run with aov No, aov uses type I wh is not ok for interactions and unbalanced designs
-
-# Wrap a linear model in an ANOVA output
-# aov2 <- car::Anova(lm(log(rt) ~ task_R*ANSWER_R*context_R*cocoa , drt), type = "III")
-# aov2
 
 
 # Plot Rts ---------------------------------------------------------------------------------------------
@@ -572,3 +566,8 @@ rawER <- group_my(rawER1, meanerror, exp, cocoa, context_R, ANSWER_R, task_R)
 rawER <- as.data.frame(rawER[, c("task_R", "ANSWER_R", "context_R", "cocoa", "exp", "meanmeanerror", "n", "se")])
 write.table(rawER, paste0(tabDir,"rawER.csv"), row.names = F, sep = ";", dec = ".")
 
+
+
+# anova rts
+aov_nice <- aov_ez("pp", "rt", drt, within=c("task_R", "ANSWER_R", "context_R", "cocoa"), between = c("exp"),
+                   return="nice", fun_aggregate = mean)
