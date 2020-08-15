@@ -23,9 +23,9 @@ source("C://Users//Elena//Documents//AA_PhD//Projects//expra2020_faces//modelsFu
 
 # Load and prepare Data ----------------------------------------------------------------------------------------
 
-B = "B1B2"
+#B = "B1B2"
 #B = "B1"
-#B = "B2"
+B = "B2"
 
 # Load B1 and pick 2 people form rwth only ----------------------------------------------------------------------
 d_pro <- read.csv(paste0(dataDir, "B1_Pro", ".csv"), sep = ";", dec = ",")
@@ -37,7 +37,7 @@ d_rwth$prolific <- 0
 # Pick 2 pps with horiAA_1st300
 
 # We got too many with same counterbalance:
-# I pick LU1 and LY8, the first male and a female with no warnings int he logbook
+# I pick LU1 and LY8, the first male and a female with no warnings in the logbook
 rwthLB <- read.csv2(paste0(tabDir, "logbook_B1_RWTH", ".csv"))
 
 pps2keep <- rwthLB[rwthLB$mapping != "BRAC1_horiAA_1st300" | rwthLB$pp == "LU1" | rwthLB$pp == "LY8", "pp"]
@@ -70,7 +70,31 @@ if(B == "B1"){d <- dtot[dtot$exp == "BRAC1",]
 }else if (B == "B2"){d <- dtot[dtot$exp == "BRAC2",]
 }else if (B== "B1B2"){d <- dtot}
 
-# Change variables class ----------------------------------------------------------------------------------------
+rownames(d) <- NULL
+
+# Add more variables ---------------------------------------------------------------------------------------
+# Congruency
+d$congruency <- 99
+
+for (i in 1:dim(d)[1]){
+  currPP = d[i, "pp"]
+  currStim = d[i, "stimulus"]
+  currTask = d[i, "task"]
+  if (unique(d[d$pp == currPP & d$stimulus == currStim & d$task != currTask, "ANSWER"]) == d[i, "ANSWER"]){
+    d$congruency[i] <- 1
+  } else {
+    d$congruency[i] <- 0
+  }
+}
+
+d$congruency <- as.factor(d$congruency)
+
+# if previous trial was congruent or not
+d <- sequence_relation(d, "congruency", 96, suffix = "post", Lag = 1, type = "error")
+
+d$congruency_post <- as.factor(d$congruency_post)
+
+# Change variables class ---------------------------------------------------------------------------------------
 
 d$task_R <- as.factor(d$task_R)
 d$ANSWER_R <- as.factor(d$ANSWER_R)
@@ -186,6 +210,12 @@ if (B == "B1"){
   mod2 <- lmer(log(rt) ~ task_R*ANSWER_R*context_R*cocoa + blockNum + sex + Participant.Browser + 
                  Participant.OS +handedness + prolific + respRepetitions + (1|pp) + (1|stimulus), 
                data= drt, REML=F)
+  mod2bis <- lmer(log(rt) ~ task_R*ANSWER_R*context_R*cocoa + ANSWER_R*congruency + blockNum + sex + 
+                 Participant.Browser + Participant.OS +handedness + prolific + respRepetitions + 
+                 (1|pp) + (1|stimulus), data= drt, REML=F)
+  mod2tris <- lmer(log(rt) ~ task_R*ANSWER_R*context_R*cocoa + ANSWER_R*congruency_post + blockNum + sex + 
+                    Participant.Browser + Participant.OS +handedness + prolific + respRepetitions + 
+                    (1|pp) + (1|stimulus), data= drt, REML=F)
 } else if (B == "B1B2"){
   mod2 <- lmer(log(rt) ~ task_R*ANSWER_R*context_R*cocoa*exp + blockNum + sex + Participant.Browser + 
                  Participant.OS +handedness + prolific + respRepetitions + (1|pp) + (1|stimulus),
@@ -196,6 +226,7 @@ if (B == "B1"){
 
 summary(mod2)
 summary(mod1)
+summary(mod2tris)
 # Note:
 # in B1B2, block num doens't interact signifcantly with ANS*task - so no evidence they learnt 
 # about different frequency of resp sw versus resp rep
@@ -311,6 +342,33 @@ zero[7] <- 1
 trec <- rep(0,16)
 trec[15] <- 1
 
+# check if task-resp binding is significantly smaller in panel 3 than in 1 in Study 1 (no)
+repreprep0 <- c(repreprep[1:8], rep(0,8))
+swreprep0 <- c(0, 1, rep(0, 14))
+
+repswrep0 <- c(repswrep[1:8], rep(0,8))
+swswrep0 <- c(rep(0,3), 1, rep(0, 12))
+
+reprepsw0 <- c(reprepsw[1:8], rep(0,8))
+swrepsw0 <- c(rep(0,5), 1, rep(0, 10))
+
+repswsw0 <- c(repswsw[1:8], rep(0,8)) 
+swswsw0 <- c(rep(0,7), 1, rep(0, 8))
+
+# check if task-resp binding is significantly smaller in panel 4 than in 2 in Study 2 ()
+sumM <- summary(estMeans)
+repreprep300 <- as.numeric(sumM$task_R == 0 & sumM$ANSWER_R == 0 & sumM$context_R == 0 & sumM$cocoa == 300)
+swreprep300 <- as.numeric(sumM$task_R == 1 & sumM$ANSWER_R == 0 & sumM$context_R == 0 & sumM$cocoa == 300)
+
+repswrep300 <- as.numeric(sumM$task_R == 0 & sumM$ANSWER_R == 1 & sumM$context_R == 0 & sumM$cocoa == 300)
+swswrep300 <- as.numeric(sumM$task_R == 1 & sumM$ANSWER_R == 1 & sumM$context_R == 0 & sumM$cocoa == 300)
+
+reprepsw300 <- as.numeric(sumM$task_R == 0 & sumM$ANSWER_R == 0 & sumM$context_R == 1 & sumM$cocoa == 300)
+swrepsw300 <- as.numeric(sumM$task_R == 1 & sumM$ANSWER_R == 0 & sumM$context_R == 1 & sumM$cocoa == 300)
+
+repswsw300 <- as.numeric(sumM$task_R == 0 & sumM$ANSWER_R == 1 & sumM$context_R == 1 & sumM$cocoa == 300)
+swswsw300 <- as.numeric(sumM$task_R == 1 & sumM$ANSWER_R == 1 & sumM$context_R == 1 & sumM$cocoa == 300)
+
 # According to the study, different post-hoc
 if (B == "B1"){
   
@@ -318,14 +376,17 @@ if (B == "B1"){
                             interaction = "pairwise", type = "response")
   #taskXcontext <- contrast(emmeans(mod2, ~ task_R*context_R| ANSWER_R + cocoa), 
   #                         interaction = "pairwise", type = "response")
-  #DR_bind <- contrast(emmeans(mod2, ~ context_R*ANSWER_R | task_R + cocoa), 
-  #                          interaction = "pairwise", type = "response")
+  DR_bind <- contrast(emmeans(mod2, ~ context_R*ANSWER_R | task_R + cocoa), 
+                            interaction = "pairwise", type = "response")
   
   # Run the contrasts all together to adjust for multiple comparisons
   # binding must be done outside
   tot <- contrast(estMeans, method = list("RR_cocoa" = (swrep0 - swsw0) - (swrep300 - swsw300),
-                                          "DR_bind" = (repswrep - repreprep) - (repswsw -reprepsw),
-                                          "respSw_cocoa" = zero - trec))
+                                          #"DR_bind" = (repswrep - repreprep) - (repswsw -reprepsw),
+                                          "respSw_cocoa" = zero - trec,
+                                          "bindingPanel1vs3" = ((swreprep0-repreprep0) - (swswrep0-repswrep0))
+                  - ((swrepsw0-reprepsw0) - (swswsw0-repswsw0))
+  ))
 
   }else if (B== "B2"){
     
@@ -333,6 +394,8 @@ if (B == "B1"){
                             interaction = "pairwise", type = "response")
   cocoa <- contrast(emmeans(mod2, ~ cocoa|task_R + ANSWER_R + context_R + cocoa), 
                             interaction = "pairwise", type = "response")
+  tot <- contrast(estMeans, method = list("bindingPanel2vs4" = ((swreprep300-repreprep300) - 
+                        (swswrep300-repswrep300)) - ((swrepsw300-reprepsw300) - (swswsw300-repswsw300))))
 
 } else if (B == "B1B2") {
   #postHoc <- contrast(estMeans, "consec", simple = "each", combine = TRUE, adjust = "mvt")
