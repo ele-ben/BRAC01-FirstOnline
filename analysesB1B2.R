@@ -24,8 +24,8 @@ source("C://Users//Elena//Documents//AA_PhD//Projects//expra2020_faces//modelsFu
 # Load and prepare Data ----------------------------------------------------------------------------------------
 
 #B = "B1B2"
-#B = "B1"
-B = "B2"
+B = "B1"
+#B = "B2"
 
 # Load B1 and pick 2 people form rwth only ----------------------------------------------------------------------
 d_pro <- read.csv(paste0(dataDir, "B1_Pro", ".csv"), sep = ";", dec = ",")
@@ -299,7 +299,7 @@ if (B == "B1" | B== "B2"){
 #   theme_bw() 
 # dev.off()
 
-# Contrasts RTs ---------------------------------------------------------------------------------------------
+# Prepare Contrasts RTs ---------------------------------------------------------------------------------------
 
 # Build custom contrasts
 # https://aosmith.rbind.io/2019/04/15/custom-contrasts-emmeans/
@@ -318,7 +318,7 @@ swrep <- as.numeric(trep!=rrep & trep == 0)
 repsw <- as.numeric(trep!=rrep & trep == 1)
 swsw <- as.numeric(trep==rrep & trep == 0)
 
-# binding must be done aoutside to see in the different panels
+# binding must be done in the pre-made function to see in the different panels
 #swCost <- contrast(estMeans, method = list("Sw_costs" = tsw - trep))
 
 # RR_cocoa: Check if resp sw cost in task switch are different in cocoa = 300 and = 0
@@ -369,13 +369,14 @@ swrepsw300 <- as.numeric(sumM$task_R == 1 & sumM$ANSWER_R == 0 & sumM$context_R 
 repswsw300 <- as.numeric(sumM$task_R == 0 & sumM$ANSWER_R == 1 & sumM$context_R == 1 & sumM$cocoa == 300)
 swswsw300 <- as.numeric(sumM$task_R == 1 & sumM$ANSWER_R == 1 & sumM$context_R == 1 & sumM$cocoa == 300)
 
+# Run Contrasts RTs -------------------------------------------------------------------------------------------
 # According to the study, different post-hoc
 if (B == "B1"){
   
   bindingEffect <- contrast(emmeans(mod2, ~ task_R*ANSWER_R | context_R + cocoa), 
                             interaction = "pairwise", type = "response")
-  #taskXcontext <- contrast(emmeans(mod2, ~ task_R*context_R| ANSWER_R + cocoa), 
-  #                         interaction = "pairwise", type = "response")
+  taskXcontext <- contrast(emmeans(mod2, ~ task_R*context_R| ANSWER_R + cocoa), 
+                           interaction = "pairwise", type = "response")
   DR_bind <- contrast(emmeans(mod2, ~ context_R*ANSWER_R | task_R + cocoa), 
                             interaction = "pairwise", type = "response")
   
@@ -385,7 +386,15 @@ if (B == "B1"){
                                           #"DR_bind" = (repswrep - repreprep) - (repswsw -reprepsw),
                                           "respSw_cocoa" = zero - trec,
                                           "bindingPanel1vs3" = ((swreprep0-repreprep0) - (swswrep0-repswrep0))
-                  - ((swrepsw0-reprepsw0) - (swswsw0-repswsw0))
+                  - ((swrepsw0-reprepsw0) - (swswsw0-repswsw0)),
+                                          "RRcost_taskSw_contSw_0" = swrepsw0 - swswsw0,
+                  "delta_RRcost_swsw_0vs300" = (swrepsw0 - swswsw0) - (swrepsw300 - swswsw300),
+                  "respRep_swsw_0vs300" = swrepsw300 - swrepsw0,
+                  "taskSwCost_repsw_0vs300" = (swrepsw0 - reprepsw0) - (swrepsw300 - reprepsw300),
+                  "taskSwCost_respsw0_contextSwvsRep" = (swswsw0 - repswsw0) - (swswrep0 - repswrep0),
+                  "taskSwCost_swsw0_0vs300" = (swswsw0 - repswsw0) - (swswsw300 - repswsw300),
+                  "delta_RRbenefit_0taskrep_contSwVsRep" = (repswrep0 - repreprep0) - (repswsw0 - reprepsw0)
+                                                                    
   ))
 
   }else if (B== "B2"){
@@ -394,6 +403,11 @@ if (B == "B1"){
                             interaction = "pairwise", type = "response")
   cocoa <- contrast(emmeans(mod2, ~ cocoa|task_R + ANSWER_R + context_R + cocoa), 
                             interaction = "pairwise", type = "response")
+  # added after preparing brac presentation
+  taskXcontext <- contrast(emmeans(mod2, ~ task_R*context_R| ANSWER_R + cocoa), 
+                           interaction = "pairwise", type = "response")
+  DR_bind <- contrast(emmeans(mod2, ~ context_R*ANSWER_R | task_R + cocoa), 
+                      interaction = "pairwise", type = "response")
   tot <- contrast(estMeans, method = list("bindingPanel2vs4" = ((swreprep300-repreprep300) - 
                         (swswrep300-repswrep300)) - ((swrepsw300-reprepsw300) - (swswsw300-repswsw300))))
 
@@ -413,6 +427,8 @@ write.table(postHoc, paste0(tabDir, B, "_postHoc_Rts", ".csv"), dec = ".", sep =
 #cocoaEff <- contrast(estMeans, method = list("zeroMinusTrec" = zero - trec))
 
 
+# Run anova ------------------------------------
+aov_nice <- aov_ez("pp", "rt", drt, within=c("task_R", "ANSWER_R", "context_R", "cocoa"),return="nice", fun_aggregate = mean)
 
 
 # Errors -------------------------------------------------------------------------------------------------
@@ -525,6 +541,10 @@ if (B== "B1"){
   #postHoc <- contrast(estMeans, "consec", simple = "each", combine = TRUE, adjust = "mvt")
   bindingEffect <- contrast(emmeans(mode2, ~ task_R*ANSWER_R | context_R + cocoa), 
                             interaction = "pairwise", type = "response")
+  taskXcontext <- contrast(emmeans(mode2, ~ task_R*context_R| ANSWER_R + cocoa), 
+                           interaction = "pairwise", type = "response")
+  DR_bind <- contrast(emmeans(mode2, ~ context_R*ANSWER_R | task_R + cocoa), 
+                      interaction = "pairwise", type = "response")
   
   #Custom contrasts
   
@@ -584,8 +604,10 @@ if (B== "B1"){
     contCocoa <- contrast(emmeans(mode2, ~ context_R*cocoa | task_R + ANSWER_R ), 
                               interaction = "pairwise", type = "response")
     # for the hypothese this would make more sense maybe:
-    #DR_bind <- contrast(emmeans(mode2, ~ context_R*ANSWER_R | task_R + cocoa), 
-    #                      interaction = "pairwise", type = "response")
+    DR_bind <- contrast(emmeans(mode2, ~ context_R*ANSWER_R | task_R + cocoa),
+                         interaction = "pairwise", type = "response")
+    taskXcontext <- contrast(emmeans(mode2, ~ task_R*context_R| ANSWER_R + cocoa), 
+                             interaction = "pairwise", type = "response")
     # Custom contrasts
     
     # cont_300: task & rep switch & 300, compare context rep & sw
@@ -609,7 +631,15 @@ if (B== "B1"){
                       data = de, type = "response")
   }
 
-# Draw a table with all of the Raw means ----------------------------------------------------------------------
+
+
+# Run AnOVa on errors -------------------------------------------------------------------------------------
+
+aov_nice <- aov_ez("pp", "error", de, within=c("task_R", "ANSWER_R", "context_R", "cocoa"),
+                   return="nice", fun_aggregate = mean)
+
+
+# Draw a table with all of the Raw means -------------------------------------------------------------------
 
 predRT <- summary(emmeans(mod2, c("task_R", "ANSWER_R", "context_R", "cocoa", "exp"), lmer.df = "satterthwaite", 
                 data = drt, type = "response"))
