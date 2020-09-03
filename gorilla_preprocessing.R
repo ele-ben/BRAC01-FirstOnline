@@ -18,6 +18,7 @@ setwd('C://Users//Elena//Documents//AA_PhD//Projects//BRAC01_BRAC02//BRAC01-Firs
 dataDir = "data//"
 figDir = "figures//"
 tabDir = "tables//"
+logbookDir = paste0(dataDir, "logbooks//")
 
 # a .R file with custom functions - define the path to it if different from the working directory
 source("C://Users//Elena//Documents//AA_PhD//Projects//expra2020_faces//modelsFun.R")
@@ -176,7 +177,7 @@ names(demo)[which(names(demo) == "Participant.Public.ID")] <- "pp"
 
 # If you don't want to go over the old pps... :
 # reload the old logbook
-oldLogbook <- read.csv2(paste0(tabDir, "logbook_old_B1_RWTH", ".csv"))
+oldLogbook <- read.csv2(paste0(logbookDir, "logbook_old_B1_RWTH", ".csv"))
 
 # detect the old pps and subtract them from the whole set of pps
 oldPps <- oldLogbook$pp
@@ -500,7 +501,7 @@ if (unique(dclean$framecolor)[1] == "black"){
 }
 
 # save this dataframe for future inspections
-write.csv2(logbook_toExp, paste0(tabDir, "logbook_", B, "_RWTH.csv"), row.names = F)
+write.csv2(logbook_toExp, paste0(logbookDir, "logbook_", B, "_RWTH.csv"), row.names = F)
 
 
 # Refine cleaned dataset --------------------
@@ -508,7 +509,7 @@ write.csv2(logbook_toExp, paste0(tabDir, "logbook_", B, "_RWTH.csv"), row.names 
 # Remove the pps to be removed
 
 #load the logbook (if not done already)
-#logbook_toExp <- read.csv2(paste0(tabDir, "logbook_B2Prolific.csv"))
+#logbook_toExp <- read.csv2(paste0(logbookDir, "logbook_B2Prolific.csv"))
 
 # find pps to remove from the loogbook (that now includes old and new pps)
 pps2remove <- logbook_toExp[logbook_toExp$remove == 1, "pp"]

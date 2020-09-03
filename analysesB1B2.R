@@ -16,18 +16,14 @@ setwd('C://Users//Elena//Documents//AA_PhD//Projects//BRAC01_BRAC02//BRAC01-Firs
 dataDir = "data//"
 figDir = "figures//"
 tabDir = "tables//"
+logbookDir = paste0(dataDir, "logbooks//")
 
 # a .R file with custom functions - define the path to it if different from the working directory
 source("C://Users//Elena//Documents//AA_PhD//Projects//expra2020_faces//modelsFun.R")
 
-
 # Load and prepare Data ----------------------------------------------------------------------------------------
 
-#B = "B1B2"
-B = "B1"
-#B = "B2"
-
-# Load B1 and pick 2 people form rwth only ----------------------------------------------------------------------
+# Load B1 and pick 2 people form rwth only
 d_pro <- read.csv(paste0(dataDir, "B1_Pro", ".csv"), sep = ";", dec = ",")
 d_pro$prolific <- 1
 
@@ -38,7 +34,7 @@ d_rwth$prolific <- 0
 
 # We got too many with same counterbalance:
 # I pick LU1 and LY8, the first male and a female with no warnings in the logbook
-rwthLB <- read.csv2(paste0(tabDir, "logbook_B1_RWTH", ".csv"))
+rwthLB <- read.csv2(paste0(logbookDir, "logbook_B1_RWTH", ".csv"))
 
 pps2keep <- rwthLB[rwthLB$mapping != "BRAC1_horiAA_1st300" | rwthLB$pp == "LU1" | rwthLB$pp == "LY8", "pp"]
 pps2rem <- setdiff(unique(d_rwth$pp), pps2keep)
@@ -51,7 +47,7 @@ d1 <- rbind(d_rwth, d_pro)
 names(d1)[names(d1) == "cuecolor_R"] <- "context_R"
 d1$exp <- "BRAC1"
 
-# Load BRAC2 ---------------------------------------------------------------------------------------------
+# Load BRAC2
 d_pro2 <- read.csv(paste0(dataDir, "B2_Pro", ".csv"), sep = ";", dec = ",")
 d_pro2$prolific <- 1
 
@@ -64,8 +60,13 @@ d2$exp <- "BRAC2"
 
 dtot <- rbind(d1, d2)
 
-# Subset the dataset based on the B
+# Pick the experiment! ----------------------------------------------------------------------------------------
 
+#B = "B1B2"
+B = "B1"
+#B = "B2"
+
+# Subset the dataset based on the B
 if(B == "B1"){d <- dtot[dtot$exp == "BRAC1",]
 }else if (B == "B2"){d <- dtot[dtot$exp == "BRAC2",]
 }else if (B== "B1B2"){d <- dtot}
@@ -122,7 +123,7 @@ d$respRepetitions <- 0
 d$handedness[d$handedness == "Other (please specify)"] <- "right-handed"
 d$sex[d$sex == "I'd rather not say"] <- "male"
 
-# dataset clening for rts analyses
+# dataset cleaning for rts analyses
 cat("Fast trials were", sum(d$rt < 200), "\n")
 drt <- d[(d$task_R != 99 & d$rt > 200 & !is.na(d$Attempt == 1)),]
 drt <- drt[!(drt$error == 1 | drt$error_R == 1),]
@@ -180,7 +181,7 @@ curve(dnorm(x, mean(log(drt$rt)), sd(log(drt$rt))), add= T, col= 2, lwd= 2)
 dev.off()
 
 
-# RTs Models ---------------------------------------------------------------------------------------------
+# RTs Models - Preliminary ---------------------------------------------------------------------------------------------
 
 # Check hierarchical structure of the data
 modLin <- lm(log(rt) ~ 1, data= drt)
@@ -196,6 +197,8 @@ summary(modEmpty1)
 # between empty better
 anova(modEmpty1, modEmpty)
 
+# RTs Models - Run ---------------------------------------------------------------------------------------------
+
 # Model with control variables
 
 if (B == "B1"){
@@ -210,6 +213,7 @@ if (B == "B1"){
   mod2 <- lmer(log(rt) ~ task_R*ANSWER_R*context_R*cocoa + blockNum + sex + Participant.Browser + 
                  Participant.OS +handedness + prolific + respRepetitions + (1|pp) + (1|stimulus), 
                data= drt, REML=F)
+  # try congruency
   mod2bis <- lmer(log(rt) ~ task_R*ANSWER_R*context_R*cocoa + ANSWER_R*congruency + blockNum + sex + 
                  Participant.Browser + Participant.OS +handedness + prolific + respRepetitions + 
                  (1|pp) + (1|stimulus), data= drt, REML=F)
@@ -303,6 +307,7 @@ if (B == "B1" | B== "B2"){
 
 # Build custom contrasts
 # https://aosmith.rbind.io/2019/04/15/custom-contrasts-emmeans/
+# check also this: https://stats.stackexchange.com/questions/165125/lsmeans-r-adjust-for-multiple-comparisons-with-interaction-terms
 
 # Compare the Delta of the task sw cost in resp rep and resp sw --> same as interaction of the mdel
 # take the estMeans and build vectors that "pick" the specific condition
@@ -393,9 +398,9 @@ if (B == "B1"){
                   "taskSwCost_repsw_0vs300" = (swrepsw0 - reprepsw0) - (swrepsw300 - reprepsw300),
                   "taskSwCost_respsw0_contextSwvsRep" = (swswsw0 - repswsw0) - (swswrep0 - repswrep0),
                   "taskSwCost_swsw0_0vs300" = (swswsw0 - repswsw0) - (swswsw300 - repswsw300),
-                  "delta_RRbenefit_0taskrep_contSwVsRep" = (repswrep0 - repreprep0) - (repswsw0 - reprepsw0)
-                                                                    
-  ))
+                  "delta_RRbenefit_0taskrep_contSwVsRep" = (repswrep0 - repreprep0) - (repswsw0 - reprepsw0),
+                  # try if this adjust here works!                                                  
+                  adjust = "holm"))
 
   }else if (B== "B2"){
     
@@ -427,9 +432,30 @@ write.table(postHoc, paste0(tabDir, B, "_postHoc_Rts", ".csv"), dec = ".", sep =
 #cocoaEff <- contrast(estMeans, method = list("zeroMinusTrec" = zero - trec))
 
 
-# Run anova ------------------------------------
-aov_nice <- aov_ez("pp", "rt", drt, within=c("task_R", "ANSWER_R", "context_R", "cocoa"),return="nice", fun_aggregate = mean)
+# Run anova RTs ---------------------------------------------------------------------------------------
 
+# function from afex package that uses car:Anova and gives F test
+
+#check which type of Sum of Squares we're using
+# If 3 is cool
+if (afex_options("type") != 3){cat("!!! you are about to run and ANOVA type", afex_options("type"), "!!!")}
+
+aov_nice <- aov_ez("pp", "rt", drt, within=c("task_R", "ANSWER_R", "context_R", "cocoa"),
+                   return="aov", 
+                   fun_aggregate = mean, include_aov = T)
+class(aov_nice)
+
+aov4 <- aov_4(rt ~ (task_R*ANSWER_R*context_R*cocoa|pp), data = drt, fun_aggregate = mean)
+
+# The nice above is not identical to car::Anova unless the control variables are removed: particularly is 
+# the variable coding the number of response repetition trials that, when added, swaps the significance from context 
+# relation to response relation
+# ANV <- car::Anova(lmer(rt ~ task_R*ANSWER_R*context_R*cocoa + blockNum + sex + Participant.Browser +
+#                          Participant.OS + respRepetitions + handedness + prolific + (1|pp) + (1|stimulus), data = drt, REML = F), type = "III")
+# print(ANV)
+
+# Run post-hocs
+TukeyHSD(aov_nice$aov)
 
 # Errors -------------------------------------------------------------------------------------------------
 

@@ -3,6 +3,15 @@ Online Task switching cognitive psychology experiment with visual stimuli and ke
 .csv files and images are generated to be uploaded in Gorilla.
 Ptyhon
 
+### Table of contents
+- [Introduction](#Introduction)
+- [experiment Folder](#experimentFolder)
+- [data Folder](#dataFolder)
+- [data_bk folder](#data_bkfolder)
+
+### [Introduction](#Introduction)
+
+### [experiment Folder](#experimentFolder)
 IMPORTANT: it is necessary to download funx_10.py file from my functions-experiments repository
 For simplicity, put it in the same folder of Draw_tasks_4.py file.
 
@@ -32,3 +41,29 @@ the key for the "odd" response (the "even", follows suit). In this example, grea
 is mapped to A and less to L and odd to A and even to L. "1st300" stands for blocks
 with odd number (1st, 3rd, 5th... blocks) have cocoa 300 and blocks with even
 number have cocoa 0.
+
+## [data Folder](#dataFolder)
+There are raw data and clean data.
+Please note that actual raw data can be dowloaded from Gorilla, whereas the files here are already piled up together to collect the numerous experimental files into 8 files. This operation only consisted in stacking the datasets one below  the other matching coloum names, thus this required to slighlty change some column names when these were renamed by gorilla, but the data are otherwise untouched.
+Raw data files start with "data_exp" since this is Gorilla naming system. Of these files, half are answer to demographics (_questionnaire-) and half the expeirmental data ("_task-"). Besides, data collected from RWTH students are divided from data collected from Prolific, because having different recruitment systems required 2 different experiment trees in Gorilla.
+Legenda of file names:
+
+- data_exp__RWTH_OldNew = BRAC1, RWTH students
+- data_exp_17326_PlusMara = BRAC2, RWTH students
+- data_exp_18755_75pps = BRAC1, Prolific pps
+- data_exp_18619_72pps = BRAC2, Prolific pps
+
+The remaining 4 files starting with "B" are the clean data:
+B1 stands for BRAC 1, that is context-in cue experiment, and "B2" for BRAC2, context as background, the experiment in which the context is the task-irrelevant frame colour. The data are divided according to participant recruitment method: "_Pro" stands for prolific and "_RWTH" stands for RWTH Aachen University students, recruited via-email. This yields 4 files for the 2 exeperiments.
+These files contain both demographic and experimental info and do not contain participants that were removed because of extremely poor performance or for having participated in both B1 and B2. In B1_RWTH there are many participants with the same counterbalancing condition because of a mistake, but these are all included, since there is no established criterion on how to select them. Similarly participants that may result outliers, but the performance of which is not obviously signalling a really scarce level of attention are included, so that each researcher will be able to decide herself who to include. Criteria for exclusion are visible in the loogbook
+
+
+[data_bk folder](#data_bkfolder)
+data files names legenda:
+17308-v16 = OLD_BRAC01 - RWTH [- mistake in the counterbalacing, all pps had the same, thus we created a new version for future pps]
+18723-v2 = NEW_BRAC01 - RWTH [all other B1 pps with the remaing 15 counterbalacing conditions]
+17326-v8 = BRAC02 - RWTH - [one participant, we realised the same counterbalancing mistake on time]
+17326-v13 = BRAC02 - RWTH [all other B2 pps with the remaing 15 counterbalacing conditions]
+18619-v2 or v3 = BRAC02 - Prolific [there are much more versions because the possible counterbalacing were reduced to try to have as many pps ine ach condition]
+(18613-v2 = OLD_BRAC01 - Prolific) [- same mistake in the counterbalacing, thus we created a new version for future pps]
+(18755-v2 = NEW_BRAC01 - Prolific) [there are much more versions, as for 18619]
