@@ -63,8 +63,8 @@ dtot <- rbind(d1, d2)
 # Pick the experiment! ----------------------------------------------------------------------------------------
 
 #B = "B1B2"
-B = "B1"
-#B = "B2"
+#B = "B1"
+B = "B2"
 
 # Subset the dataset based on the B
 if(B == "B1"){d <- dtot[dtot$exp == "BRAC1",]
@@ -440,12 +440,21 @@ write.table(postHoc, paste0(tabDir, B, "_postHoc_Rts", ".csv"), dec = ".", sep =
 # If 3 is cool
 if (afex_options("type") != 3){cat("!!! you are about to run and ANOVA type", afex_options("type"), "!!!")}
 
-aov_nice <- aov_ez("pp", "rt", drt, within=c("task_R", "ANSWER_R", "context_R", "cocoa"),
-                   return="aov", 
-                   fun_aggregate = mean, include_aov = T)
-class(aov_nice)
+# make sure you understand this before running between-subj analyses:
+#afex_options("check_contrasts")
 
-aov4 <- aov_4(rt ~ (task_R*ANSWER_R*context_R*cocoa|pp), data = drt, fun_aggregate = mean)
+aov_nice <- aov_ez("pp", "rt", drt, within=c("task_R", "ANSWER_R", "context_R", "cocoa"),
+                   return="nice", anova_table = list(es = "pes"),
+                   fun_aggregate = mean, include_aov = T)
+
+# fun for exporting anova table
+save_aovNice_table <- function (tab){
+  tab$df <- gsub(",", "", tab$df)
+  tab[,"F"] <- gsub("\\*|\\+| ", "", tab$df)
+  tab
+}
+# save output
+write.table(save_aovNice_table(aov_nice), file= paste0(tabDir, B, "_anova_RTs", ".csv"), sep = ";", dec = ".")
 
 # The nice above is not identical to car::Anova unless the control variables are removed: particularly is 
 # the variable coding the number of response repetition trials that, when added, swaps the significance from context 
@@ -454,8 +463,50 @@ aov4 <- aov_4(rt ~ (task_R*ANSWER_R*context_R*cocoa|pp), data = drt, fun_aggrega
 #                          Participant.OS + respRepetitions + handedness + prolific + (1|pp) + (1|stimulus), data = drt, REML = F), type = "III")
 # print(ANV)
 
-# Run post-hocs
-TukeyHSD(aov_nice$aov)
+# Run post-hocs -------------------------------------------------------------------------
+
+# calculate means in each condition
+meansXpp <- as.data.frame(group_my(drt, rt, pp, task_R, ANSWER_R, context_R, cocoa))
+meansXcond <- as.data.frame(group_my(meansXpp, meanrt, task_R, ANSWER_R, context_R, cocoa))
+
+# dissect task x resp interaction
+eMM <- emmeans(aov_nice, ~ task_R*ANSWER_R*context_R*cocoa)
+bindingEffect <- contrast(emmeans(aov_nice, ~ task_R*ANSWER_R | context_R + cocoa), 
+                          interaction = "pairwise", type = "response")
+
+# with t-tests
+repreprep0 <- meansXpp[meansXpp$task_R == 0 & meansXpp$ANSWER_R == 0 & meansXpp$context_R == 0 & meansXpp$cocoa == 0, "meanrt"]
+swreprep0 <- meansXpp[meansXpp$task_R == 1 & meansXpp$ANSWER_R == 0 & meansXpp$context_R == 0 & meansXpp$cocoa == 0, "meanrt"]
+
+repswrep0 <- meansXpp[meansXpp$task_R == 0 & meansXpp$ANSWER_R == 1 & meansXpp$context_R == 0 & meansXpp$cocoa == 0, "meanrt"]
+swswrep0 <- meansXpp[meansXpp$task_R == 1 & meansXpp$ANSWER_R == 1 & meansXpp$context_R == 0 & meansXpp$cocoa == 0, "meanrt"]
+
+reprepsw0 <- meansXpp[meansXpp$task_R == 0 & meansXpp$ANSWER_R == 0 & meansXpp$context_R == 1 & meansXpp$cocoa == 0, "meanrt"]
+swrepsw0 <- meansXpp[meansXpp$task_R == 1 & meansXpp$ANSWER_R == 0 & meansXpp$context_R == 1 & meansXpp$cocoa == 0, "meanrt"]
+
+repswsw0 <- meansXpp[meansXpp$task_R == 0 & meansXpp$ANSWER_R == 1 & meansXpp$context_R == 1 & meansXpp$cocoa == 0, "meanrt"]
+swswsw0 <- meansXpp[meansXpp$task_R == 1 & meansXpp$ANSWER_R == 1 & meansXpp$context_R == 1 & meansXpp$cocoa == 0, "meanrt"]
+
+repreprep300 <- meansXpp[meansXpp$task_R == 0 & meansXpp$ANSWER_R == 0 & meansXpp$context_R == 0 & meansXpp$cocoa == 300, "meanrt"]
+swreprep300 <- meansXpp[meansXpp$task_R == 1 & meansXpp$ANSWER_R == 0 & meansXpp$context_R == 0 & meansXpp$cocoa == 300, "meanrt"]
+
+repswrep300 <- meansXpp[meansXpp$task_R == 0 & meansXpp$ANSWER_R == 1 & meansXpp$context_R == 0 & meansXpp$cocoa == 300, "meanrt"]
+swswrep300 <- meansXpp[meansXpp$task_R == 1 & meansXpp$ANSWER_R == 1 & meansXpp$context_R == 0 & meansXpp$cocoa == 300, "meanrt"]
+
+reprepsw300 <- meansXpp[meansXpp$task_R == 0 & meansXpp$ANSWER_R == 0 & meansXpp$context_R == 1 & meansXpp$cocoa == 300, "meanrt"]
+swrepsw300 <- meansXpp[meansXpp$task_R == 1 & meansXpp$ANSWER_R == 0 & meansXpp$context_R == 1 & meansXpp$cocoa == 300, "meanrt"]
+
+repswsw300 <- meansXpp[meansXpp$task_R == 0 & meansXpp$ANSWER_R == 1 & meansXpp$context_R == 1 & meansXpp$cocoa == 300, "meanrt"]
+swswsw300 <- meansXpp[meansXpp$task_R == 1 & meansXpp$ANSWER_R == 1 & meansXpp$context_R == 1 & meansXpp$cocoa == 300, "meanrt"]
+
+# test
+rep0 <- t.test(swreprep0-repreprep0, swswrep0-repswrep0, var.equal = T, paired =  T)
+sw0 <- t.test(swrepsw0-reprepsw0, swswsw0-repswsw0, var.equal = T, paired =  T)
+rep300 <- t.test(swreprep300-repreprep300, swswrep300-repswrep300, var.equal = T, paired =  T)
+sw300 <- t.test(swrepsw300-reprepsw300, swswsw300-repswsw300, var.equal = T, paired =  T)
+
+#p.adjust
+adjPValues <- p.adjust(c(rep0$p.value, sw0$p.value, rep300$p.value, sw300$p.value), method = "holm")
 
 # Errors -------------------------------------------------------------------------------------------------
 
@@ -660,9 +711,70 @@ if (B== "B1"){
 
 
 # Run AnOVa on errors -------------------------------------------------------------------------------------
+# group 0,1 variable into continuos error rate
+meansXpp <- as.data.frame(group_my(de, error, pp, task_R, ANSWER_R, context_R, cocoa))
 
-aov_nice <- aov_ez("pp", "error", de, within=c("task_R", "ANSWER_R", "context_R", "cocoa"),
-                   return="nice", fun_aggregate = mean)
+aov_nice <- aov_ez("pp", "meanerror", meansXpp, within=c("task_R", "ANSWER_R", "context_R", "cocoa"),
+                   return="nice", anova_table = list(es = "pes"), fun_aggregate = mean)
+
+# save output
+write.table(save_aovNice_table(aov_nice), file= paste0(tabDir, B, "_anova_ER", ".csv"), sep = ";", dec = ".")
+
+# Run Post-Hocs -------------------------------------------------------------------------------------------
+
+# isolate mean vectors
+repreprep0 <- meansXpp[meansXpp$task_R == 0 & meansXpp$ANSWER_R == 0 & meansXpp$context_R == 0 & meansXpp$cocoa == 0, "meanerror"]
+swreprep0 <- meansXpp[meansXpp$task_R == 1 & meansXpp$ANSWER_R == 0 & meansXpp$context_R == 0 & meansXpp$cocoa == 0, "meanerror"]
+
+repswrep0 <- meansXpp[meansXpp$task_R == 0 & meansXpp$ANSWER_R == 1 & meansXpp$context_R == 0 & meansXpp$cocoa == 0, "meanerror"]
+swswrep0 <- meansXpp[meansXpp$task_R == 1 & meansXpp$ANSWER_R == 1 & meansXpp$context_R == 0 & meansXpp$cocoa == 0, "meanerror"]
+
+reprepsw0 <- meansXpp[meansXpp$task_R == 0 & meansXpp$ANSWER_R == 0 & meansXpp$context_R == 1 & meansXpp$cocoa == 0, "meanerror"]
+swrepsw0 <- meansXpp[meansXpp$task_R == 1 & meansXpp$ANSWER_R == 0 & meansXpp$context_R == 1 & meansXpp$cocoa == 0, "meanerror"]
+
+repswsw0 <- meansXpp[meansXpp$task_R == 0 & meansXpp$ANSWER_R == 1 & meansXpp$context_R == 1 & meansXpp$cocoa == 0, "meanerror"]
+swswsw0 <- meansXpp[meansXpp$task_R == 1 & meansXpp$ANSWER_R == 1 & meansXpp$context_R == 1 & meansXpp$cocoa == 0, "meanerror"]
+
+repreprep300 <- meansXpp[meansXpp$task_R == 0 & meansXpp$ANSWER_R == 0 & meansXpp$context_R == 0 & meansXpp$cocoa == 300, "meanerror"]
+swreprep300 <- meansXpp[meansXpp$task_R == 1 & meansXpp$ANSWER_R == 0 & meansXpp$context_R == 0 & meansXpp$cocoa == 300, "meanerror"]
+
+repswrep300 <- meansXpp[meansXpp$task_R == 0 & meansXpp$ANSWER_R == 1 & meansXpp$context_R == 0 & meansXpp$cocoa == 300, "meanerror"]
+swswrep300 <- meansXpp[meansXpp$task_R == 1 & meansXpp$ANSWER_R == 1 & meansXpp$context_R == 0 & meansXpp$cocoa == 300, "meanerror"]
+
+reprepsw300 <- meansXpp[meansXpp$task_R == 0 & meansXpp$ANSWER_R == 0 & meansXpp$context_R == 1 & meansXpp$cocoa == 300, "meanerror"]
+swrepsw300 <- meansXpp[meansXpp$task_R == 1 & meansXpp$ANSWER_R == 0 & meansXpp$context_R == 1 & meansXpp$cocoa == 300, "meanerror"]
+
+repswsw300 <- meansXpp[meansXpp$task_R == 0 & meansXpp$ANSWER_R == 1 & meansXpp$context_R == 1 & meansXpp$cocoa == 300, "meanerror"]
+swswsw300 <- meansXpp[meansXpp$task_R == 1 & meansXpp$ANSWER_R == 1 & meansXpp$context_R == 1 & meansXpp$cocoa == 300, "meanerror"]
+
+# tests
+if (B == "B1"){
+  # dissect task x resp interaction
+  postHocLst <- list(
+  rep0 <- t.test(swreprep0-repreprep0, swswrep0-repswrep0, var.equal = T, paired =  T),
+  sw0 <- t.test(swrepsw0-reprepsw0, swswsw0-repswsw0, var.equal = T, paired =  T),
+  rep300 <- t.test(swreprep300-repreprep300, swswrep300-repswrep300, var.equal = T, paired =  T),
+  sw300 <- t.test(swrepsw300-reprepsw300, swswsw300-repswsw300, var.equal = T, paired =  T)
+  )
+}
+
+# collect p-values
+pvec <- vector()
+for (ii in 1:4){
+  #print(postHocLst[[ii]]$p.value)
+  pvec <- c(pvec, postHocLst[[ii]]$p.value)
+}
+
+#p.adjust
+adjPValues <- p.adjust(pvec, method = "holm")
+
+# save in a df
+postHocs <- as.data.frame("adj. p-value"=adjPValues)
+for (ii in 1:4){
+  postHocs <- 
+  pvec <- c(pvec, postHocLst[[ii]]$p.value)
+}
+
 
 
 # Draw a table with all of the Raw means -------------------------------------------------------------------
