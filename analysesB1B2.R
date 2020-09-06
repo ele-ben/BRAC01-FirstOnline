@@ -65,9 +65,9 @@ rm(list = c("d_pro", "d_pro2", "d_rwth", "d_rwth2", "d1", "d2"))
 
 # Pick the experiment! ----------------------------------------------------------------------------------------
 
-B = "B1B2"
+#B = "B1B2"
 #B = "B1"
-#B = "B2"
+B = "B2"
 
 # Subset the dataset based on the B
 if(B == "B1"){d <- dtot[dtot$exp == "BRAC1",]
@@ -77,26 +77,26 @@ if(B == "B1"){d <- dtot[dtot$exp == "BRAC1",]
 rownames(d) <- NULL
 
 # Add more variables ---------------------------------------------------------------------------------------
-# Congruency
-d$congruency <- 99
-
-for (i in 1:dim(d)[1]){
-  currPP = d[i, "pp"]
-  currStim = d[i, "stimulus"]
-  currTask = d[i, "task"]
-  if (unique(d[d$pp == currPP & d$stimulus == currStim & d$task != currTask, "ANSWER"]) == d[i, "ANSWER"]){
-    d$congruency[i] <- 1
-  } else {
-    d$congruency[i] <- 0
-  }
-}
-
-d$congruency <- as.factor(d$congruency)
-
-# if previous trial was congruent or not
-d <- sequence_relation(d, "congruency", 96, suffix = "post", Lag = 1, type = "error")
-
-d$congruency_post <- as.factor(d$congruency_post)
+# # Congruency
+# d$congruency <- 99
+# 
+# for (i in 1:dim(d)[1]){
+#   currPP = d[i, "pp"]
+#   currStim = d[i, "stimulus"]
+#   currTask = d[i, "task"]
+#   if (unique(d[d$pp == currPP & d$stimulus == currStim & d$task != currTask, "ANSWER"]) == d[i, "ANSWER"]){
+#     d$congruency[i] <- 1
+#   } else {
+#     d$congruency[i] <- 0
+#   }
+# }
+# 
+# d$congruency <- as.factor(d$congruency)
+# 
+# # if previous trial was congruent or not
+# d <- sequence_relation(d, "congruency", 96, suffix = "post", Lag = 1, type = "error")
+# 
+# d$congruency_post <- as.factor(d$congruency_post)
 
 # Change variables class ---------------------------------------------------------------------------------------
 
@@ -257,7 +257,7 @@ if (B == "B1" | B == "B2"){
 # it first creates a group for each comb of ALL the variables, and then average them acc.ng the require vars
 
 
-# Plot Rts ---------------------------------------------------------------------------------------------
+# Plot predicted Rts ----------------------------------------------------------------------------------------
 
 # Plot Estimates above true values 
 if (B == "B1" | B== "B2"){
@@ -278,6 +278,7 @@ if (B == "B1" | B== "B2"){
   dev.off()
   
 } else if(B == "B1B2"){
+  
   # get data of the emmip graph and extract a useful column
   e <-emmip(estMeans, ANSWER_R ~ task_R | exp + cocoa + context_R)
   xy <- e$data[,c(9,10)]
@@ -305,6 +306,45 @@ if (B == "B1" | B== "B2"){
 #                 #position = pd,color = "black") +
 #   theme_bw() 
 # dev.off()
+
+# Plot raw Rts ----------------------------------------------------------------------------------------
+
+#prepare the dataset to plot
+
+# Calculate raw means, the order cpndtns arguments is to match the one of emmip data
+gbl <- group_my(drt, rt, pp, task_R, ANSWER_R, context_R, cocoa)
+condtns <- group_my(gbl, meanrt, task_R, cocoa, context_R, ANSWER_R)
+names(condtns)[names(condtns) == "meanmeanrt"] <- "yvar"
+
+if (B == "B1" | B == "B2"){
+  
+  png(paste0(figDir, B, "_RT_raws.png"), width = 1200, height = 1000, res = 200)
+  ggplot(condtns, aes(x= task_R, y = yvar, group = ANSWER_R, colour = ANSWER_R)) +
+    geom_errorbar(aes(ymin  = yvar - se, ymax  = yvar + se), width = 0.3, size  = 0.3, 
+                  position = position_dodge(0.3), color = "black") +
+    geom_line(position = position_dodge(0.3)) +
+    geom_point(aes(colour = ANSWER_R), position = position_dodge(0.3)) +
+    theme_bw() +
+    theme(axis.title = element_text(face = "bold")) +
+    facet_wrap(~context_R + cocoa)+
+    ylab("Mean RTs")
+  dev.off()
+  
+} else if (B == "B1B2"){
+
+  png(paste0(figDir, B, "_RT_raws.png"), width = 2000, height = 1000, res = 200)
+  ggplot(condtns, aes(x= task_R, y = yvar, group = ANSWER_R, colour = ANSWER_R)) +
+    geom_errorbar(aes(ymin  = yvar - se, ymax  = yvar + se), width = 0.3, size  = 0.3, 
+                  position = position_dodge(0.3), color = "black") +
+    geom_line(position = position_dodge(0.3)) +
+    geom_point(aes(colour = ANSWER_R), position = position_dodge(0.3)) +
+    theme_bw() +
+    theme(axis.title = element_text(face = "bold")) +
+    facet_wrap(~exp + context_R + cocoa)+
+    ylab("Mean RTs")
+  dev.off()
+  
+}
 
 # Prepare Contrasts RTs ---------------------------------------------------------------------------------------
 
@@ -464,14 +504,6 @@ if (B == "B1" | B == "B2"){
 }
 
 
-# fun for exporting anova table
-export_aovNice <- function (tab){
-  tab$df <- gsub(",", "", tab$df)
-  tab[,"F"] <- gsub("\\*|\\+| ", "", tab[, "F"])
-  names(tab)[names(tab) == "pes"] <- "Partial Eta Sq."
-  tab
-}
-
 # save output
 write.table(export_aovNice(aov_nice), file= paste0(tabDir, B, "_anova_RTs", ".csv"), sep = ";", dec = ".",
             row.names = F)
@@ -617,7 +649,7 @@ if (B == "B1" | B == "B2"){
 }
 
 
-# Plot errors -------------------------------------------------------------------------------------------------
+# Plot predicted errors -------------------------------------------------------------------------------------
 
 if (B == "B1" | B== "B2"){
   e <-emmip(estMeans, ANSWER_R ~ task_R | context_R + cocoa)
@@ -657,7 +689,28 @@ if (B == "B1" | B== "B2"){
   
 }
 
+# Plot raw errors -----------------------------------------------------------------------------------------
 
+# Calculate raw means, the order cpndtns arguments is to match the one of emmip data
+gbl <- group_my(de, error, pp, task_R, ANSWER_R, context_R, cocoa)
+condtns <- group_my(gbl, meanerror, task_R, cocoa, context_R, ANSWER_R)
+names(condtns)[names(condtns) == "meanmeanerror"] <- "yvar"
+
+if (B == "B1" | B == "B2"){
+  
+  png(paste0(figDir, B, "_ER_raws.png"), width = 1200, height = 1000, res = 200)
+  ggplot(condtns, aes(x= task_R, y = yvar, group = ANSWER_R, colour = ANSWER_R)) +
+    geom_errorbar(aes(ymin  = yvar - se, ymax  = yvar + se), width = 0.3, size  = 0.3, 
+                  position = position_dodge(0.3), color = "black") +
+    geom_line(position = position_dodge(0.3)) +
+    geom_point(aes(colour = ANSWER_R), position = position_dodge(0.3)) +
+    theme_bw() +
+    theme(axis.title = element_text(face = "bold")) +
+    facet_wrap(~context_R + cocoa)+
+    ylab("Mean errors")
+  dev.off()
+  
+}
 
 # Contrasts Errors -------------------------------------------------------------------------------------------- 
 
