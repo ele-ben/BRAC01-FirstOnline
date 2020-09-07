@@ -66,8 +66,8 @@ rm(list = c("d_pro", "d_pro2", "d_rwth", "d_rwth2", "d1", "d2"))
 # Pick the experiment! ----------------------------------------------------------------------------------------
 
 #B = "B1B2"
-#B = "B1"
-B = "B2"
+B = "B1"
+#B = "B2"
 
 # Subset the dataset based on the B
 if(B == "B1"){d <- dtot[dtot$exp == "BRAC1",]
@@ -540,6 +540,7 @@ for (t in lev){for (r in lev){for (c in lev){for (co in c(0, 300)){
 
 # test
 if (B == "B1"){
+  
   postHocLst <- list(
     # dissect task x resp interaction
     t.test(t1.r0.c0.0 - t0.r0.c0.0, t1.r1.c0.0 - t0.r1.c0.0, var.equal = T, paired =  T),
@@ -550,9 +551,14 @@ if (B == "B1"){
     t.test(t1.r0.c0.0 - t0.r0.c0.0, t1.r0.c1.0 - t0.r0.c1.0, var.equal = T, paired =  T),
     t.test(t1.r1.c0.0 - t0.r1.c0.0, t1.r1.c1.0 - t0.r1.c1.0, var.equal = T, paired =  T),
     t.test(t1.r0.c0.300 - t0.r0.c0.300, t1.r0.c1.300 - t0.r0.c1.300, var.equal = T, paired =  T),
-    t.test(t1.r1.c0.300 - t0.r1.c0.300, t1.r1.c1.300 - t0.r1.c1.300, var.equal = T, paired =  T)
+    t.test(t1.r1.c0.300 - t0.r1.c0.300, t1.r1.c1.300 - t0.r1.c1.300, var.equal = T, paired =  T),
+    # cfr. the first delta in task switch costs above with the 3rd:
+    # is the modulating effect of context in resp repetitions sign.ly different in cocoa 0 vs 300?
+    t.test(((t1.r0.c0.0 - t0.r0.c0.0) - (t1.r0.c1.0 - t0.r0.c1.0)), 
+           ((t1.r0.c0.300 - t0.r0.c0.300) - (t1.r0.c1.300 - t0.r0.c1.300)), var.equal = T, paired =  T)
   )
 } else if (B == "B2"){
+  
   postHocLst <- list(
     # dissect task x resp interaction
     t.test(t1.r0.c0.0 - t0.r0.c0.0, t1.r1.c0.0 - t0.r1.c0.0, var.equal = T, paired =  T),
