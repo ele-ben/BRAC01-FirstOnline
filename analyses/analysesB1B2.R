@@ -257,6 +257,8 @@ dev.off()
 
 # Run ANOVA RTs ---------------------------------------------------------------------------------------
 
+drt$logrt <- log(drt$rt)
+
 # Function from afex package that uses car:Anova and gives F test
 
 # Check which type of Sum of Squares we're using: If 3 is cool
@@ -267,6 +269,9 @@ if (afex_options("type") != 3){cat("!!! you are about to run and ANOVA type", af
 if (B == "B1" | B == "B2"){
   
   aov_nice <- aov_ez("pp", "rt", drt, within=c("task_R", "ANSWER_R", "context_R", "cocoa"),
+                     return="nice", anova_table = list(es = "pes"), fun_aggregate = mean, include_aov = T)
+  
+  aov_log <- aov_ez("pp", "logrt", drt, within=c("task_R", "ANSWER_R", "context_R", "cocoa"),
                      return="nice", anova_table = list(es = "pes"), fun_aggregate = mean, include_aov = T)
   # names of anova vars
   grep("^[a-zA-Z_01]+$", aov_nice$Effect, value = T)
@@ -428,7 +433,33 @@ ggplot(condtns, aes(x= cocoa, y = yvar, group = ANSWER_R, colour = ANSWER_R)) +
   #scale_y_continuous(limits = c(500, 900)) +
   ylab("Mean RTs")
 dev.off()
+
+# Observe p values of the task resp context across participants
+# prepare vector to fill with pvalues
+vec <- rep(0, 92-9)
+ppsAfter9 <- seq(1:length(vec))
+# get pps list
+ppslst <- sort(unique(drt$pp))
+for (i in ppsAfter9){
+  #print(i)
+  drt_temp <- drt[drt$pp %in% ppslst[1:(9+i)],]
+  #print( ppslst[1:9+i])
+  aov_nice <- aov_ez("pp", "rt", drt_temp, within=c("task_R", "ANSWER_R", "context_R", "cocoa"),
+                     return="nice", anova_table = list(es = "pes"), fun_aggregate = mean)
   
+  vec[i] <- as.numeric(aov_nice[aov_nice$Effect == "task_R:context_R:cocoa", "p.value"])
+}
+
+is.na(vec) <- 0
+png(paste0(figDir, "exp1B_pvalues_curve_3-way.png"))
+plot(ppsAfter9, vec, type = "l", xlab = "how many participants more than 9",
+     ylab = "p-value of task x context x onset asynchr.",
+     main = "p-values trend in Exp 1B")
+points(ppsAfter9, vec, pch = 19, col = "dodgerblue")
+abline(h = 0.05, lty = "dashed", col = "red")
+dev.off()
+
+
 # Plot raw errors -----------------------------------------------------------------------------------------
 
 # Calculate raw means, the order cpndtns arguments is to match the one of emmip data
@@ -525,7 +556,9 @@ if (B == "B1"){
   # tests
   postHocLst <- list(
     "context rep vs switch in resp switches, cocoa300 only" =
-      t.test(r1.c0, r1.c1, var.equal = T, paired =  T))
+      t.test(r1.c0, r1.c1, var.equal = T, paired =  T),
+    "context rep vs switch in resp rep, cocoa300 only" =
+    t.test(r0.c0, r0.c1, var.equal = T, paired =  T))
   
   # adjust p-values and return postHocs output
   postHoc.df <- postHoc.output(postHocLst)

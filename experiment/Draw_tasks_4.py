@@ -170,7 +170,7 @@ def ANSWER(trainingShuf, fig, key, key1):
 # key = keys[1]
 # key1 = keys1[1]
 
-def mappingsGuide(fig,  key, key1, imgDir):
+def mappingsGuide(fig, key, key1, imgDir):
     """Draw a mapping guide that visually describes cue-task and response-key
     mappings.
 
@@ -180,12 +180,13 @@ def mappingsGuide(fig,  key, key1, imgDir):
 
     Parameters
     ----------
-    task_cue_map: current task cue mapping
-    key_resp_map: current response-key mapping
-    cueMap: string indictaing current task_cue_map
-    keyMap: string indictaing current key_resp_map
-    cues: output of drawCues function
-    cueDir: drectory where to save the output figures
+    fig: vector with figures names, the order of which already indicates
+        task-cue mapping, the first is magn task and the second parity
+    key: vector with keys strings for magn task, the order of which already
+        indicates key-resp mapping, the first is great and the second less
+    key1: vector with keys strings for parity task, the order of which already
+        indicates key-resp mapping, the first is odd and the second even
+    imgDir: drectory where to save the output figures
 
     Returns
     ----------
@@ -238,11 +239,11 @@ def mappingsGuide(fig,  key, key1, imgDir):
         tasks = ["parity", "magnit"] # we first write the parity responses
     if key[0][6:7] == "A": # this means greater is A
         ans = ["greater", "less"]
-    else: # this means greater is A
+    else: # this means greater is L
         ans = ["less", "greater"]
     if key1[0][6:7] == "A": # this means odd is A
         ans1 = ["odd", "even"]
-    else: # this means greater is A
+    else: # this means odd is L
         ans1 = ["even", "odd"]
     # a dictonary to map tasks to responses
     taskToResp = {"magnit": ans, "parity": ans1}

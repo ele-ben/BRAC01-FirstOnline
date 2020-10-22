@@ -1,0 +1,10 @@
+Hi everybody!
+Long post, sorry for this, but I tried to be thorough :)
+I have a question on how to assess the incremental impact of adding trials on reaction times estimations.
+My main research focus is cognitive psychology and we mostly use reaction times as dependent variable. The common practice for running our experiments is to have (poor!) participants complete 8 to 10 blocks, each made of 40-100 trials. Beacuse of coronavirus outbreak, we tried to move our experiments online and there, it is higly recommended to shorten experiments up. The questions then are:
+How bad is it for the accuracy of my estimates to have half of the data points I usually have? and
+How can I assess it?" 
+
+What I tried, is to take data from a lab experiment of mine, in which I had 8 blocks and N possible experimental conditions. Then, for each of my 33 participants and each condition (16), I took trials from blocks 1 and 2 and trials from blocks 1, 2, 3, 4 and I ran a Kolmogorov–Smirnov Test, to test the null hypothesis that reaction times in blocks 1 and 2 were extracted from a different distribution with respect to reaction times in blocks 1 to 4. Then I did the same test, this time comparing trials in blocks 1 to 4 with trials in blocks 1 to 6 (yes, I ran 24*16*4 tests). Then I did the same comparing trials in blocks 1 to 6 to trials in the whole experiment, that is blocks 1 to 8. This way I was hoping to test the incremental effect of having 2 more blocks of trials on rts distribution. In my opinion, if I was able to reject the null hypothesis that, for example, distribution of rts in 6 blocks is different from distribution of rts in 8 blocks, I would have shown that the "true" rts distribution of that person in that experimental condition it is not correctly detected with 6 blocks only...
+Is this correct in itself? Is this a sensible way to address my problem? How would you approach this problem otherwise? 
+Many thanks in adavance!
