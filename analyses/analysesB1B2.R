@@ -6,7 +6,10 @@ pacman::p_load("haven", "dplyr", "lme4", "reshape2", "ggplot2", "RColorBrewer", 
 select <- dplyr::select
 filter <- dplyr::filter
 
-# parameter for graphs
+# parameter and theme for graphs
+my_theme <- theme_minimal() + theme(axis.title = element_text(face = "bold"),
+                                    text = element_text(size=16),
+                                    axis.line = element_line(colour = "black"))
 pd = position_dodge(.1)
 
 # write the path to your project folder
@@ -65,8 +68,8 @@ rm(list = c("d_pro", "d_pro2", "d_rwth", "d_rwth2", "d1", "d2"))
 # Pick the experiment! ----------------------------------------------------------------------------------------
 
 #B = "B1B2"
-B = "B1"
-#B = "B2"
+#B = "B1"
+B = "B2"
 
 # Subset the dataset based on the B
 if(B == "B1"){d <- dtot[dtot$exp == "BRAC1",]
@@ -215,7 +218,7 @@ if (B == "B1" | B == "B2"){
   condtns1$context_R <- factor(condtns1$context_R,
                                labels = c("Context Repet.", "Context Switch"))
   condtns1$cocoa <- factor(condtns1$cocoa,
-                           labels = c("Onset Asynchr. 0 ms", "Onset Asynchr. 300 ms"))
+                           labels = c("Onset As. 0 ms", "Onset As. 300 ms"))
   condtns1$ANSWER_R <- factor(condtns1$ANSWER_R,
                               labels = c("Repet.", "Switch"))
   condtns1$task_R <- factor(condtns1$task_R, 
@@ -230,8 +233,9 @@ if (B == "B1" | B == "B2"){
                   position = pd, color = "black") +
     geom_line(position = position_dodge(0.3)) +
     geom_point(aes(colour = Response), position = position_dodge(0.3)) +
-    theme_minimal() +
-    theme(axis.title = element_text(face = "bold")) +
+    my_theme +
+    # theme_minimal() +
+    # theme(axis.title = element_text(face = "bold"), text = element_text(size=16)) +
     facet_grid(rows = vars(context_R), cols = vars(cocoa))+
     ylab("Mean RTs")+
     xlab("Task")+
@@ -245,7 +249,7 @@ if (B == "B1" | B == "B2"){
     geom_line(position = position_dodge(0.3)) +
     geom_point(aes(colour = ANSWER_R), position = position_dodge(0.3)) +
     theme_bw() +
-    theme(axis.title = element_text(face = "bold")) +
+    theme(axis.title = element_text(face = "bold"), text = element_text(size=16)) +
     facet_wrap(~exp + context_R + cocoa)+
     ylab("Mean RTs")
   
@@ -373,18 +377,8 @@ if (B == "B1"){
   aov_300 <- aov_ez("pp", "meanrt", meansXpp300, within=c("task_R", "ANSWER_R", "context_R"),
                   return="nice", anova_table = list(es = "pes"), fun_aggregate = mean, include_aov = T)
   
-  # save output
-  write.table(export_aovNice(aov_0, c("task", "resp", "context")), file= 
-                paste0(tabDir, B, "_posthoc1_anova_RTs", ".csv"), sep = ";", dec = ".", row.names = F)
-  write.table(export_aovNice(aov_300, c("task", "resp", "context")), file= 
-                paste0(tabDir, B, "_posthoc2_anova_RTs", ".csv"), sep = ";", dec = ".", row.names = F)
-
-}
+ }
   
-
-#export post-hoc tables
-write.table(postHocDf, file= paste0(tabDir, B, "_anova_postHoc_RTs", ".csv"), sep = ";", dec = ".",
-            row.names = F)
 
 # Further plots on Rts ---------------------------------------------------------------------------------
 
@@ -468,7 +462,7 @@ condtns1 <- group_my(gbl, meanerror, task_R, cocoa, context_R, ANSWER_R)
 condtns1$context_R <- factor(condtns1$context_R,
                              labels = c("Context Repet.", "Context Switch"))
 condtns1$cocoa <- factor(condtns1$cocoa,
-                         labels = c("Onset Asynchr. 0 ms", "Onset Asynchr. 300 ms"))
+                         labels = c("Onset As. 0 ms", "Onset As. 300 ms"))
 condtns1$ANSWER_R <- factor(condtns1$ANSWER_R,
                             labels = c("Repet.", "Switch"))
 condtns1$task_R <- factor(condtns1$task_R, 
@@ -486,7 +480,7 @@ if (B == "B1" | B == "B2"){
     geom_line(position = pd) +
     geom_point(aes(colour = Response), position = pd) +
     theme_minimal() +
-    theme(axis.title = element_text(face = "bold")) +
+    theme(axis.title = element_text(face = "bold"), text = element_text(size=16)) +
     facet_grid(rows = vars(context_R), cols = vars(cocoa))+
     xlab("Task")+
     coord_cartesian(ylim = c(0.03, 0.11))+

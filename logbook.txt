@@ -1,14 +1,3 @@
-SN4 participated in BRAC1 lab version - remove!
-TO3 participated in BRAC1 lab version - remove!
-
-pp  LY8  screen height was 638 while the min necessary is 648.
-
-remove pps:
-5d716715d1e5b80015d63d2e for making 182 errors & 92 super fast resp 
-5e2d8e0accad9c386b566154  did 275 errors & 42 very slow resp & 60 super fast resp
-
-5c555762dab99000015b8f12 saw cue for 316 ms 432 times; saw fixation for 1416 ms for 175 times; probably refresh rate issue
 
 5d53dc4f93278500018f4e37 accepted by mistake
 
-5a8e9c8ff1408d000176dae5 has had 697 weird cue durations; I didn't reject him on prolific but I can't use the data

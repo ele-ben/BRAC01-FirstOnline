@@ -1,4 +1,9 @@
-# BRAC01-FirstOnline
+# Experiments BRAC01 & BRAC02: Online version  
+Studies 1 and 2 of project:
+[A binding perspective on task and language switching: Exploring the influence of episodic repetition priming on flexible action control]  
+*PhD Student:* Elena Benini  
+*P.I.:* Andrea M. Philipp  
+
 Online Task switching cognitive psychology experiment with visual stimuli and keyboard responses.
 .csv files and images are generated to be uploaded in Gorilla.
 Ptyhon
@@ -8,17 +13,25 @@ Ptyhon
 - [experiment Folder](#experimentFolder)
 - [data Folder](#dataFolder)
 - [data_bk folder](#data_bkfolder)
+- [analyses folder](#analyses)
 
-### [Introduction](#Introduction)
+## [Introduction](#Introduction)  
 
-### [experiment Folder](#experimentFolder)
-IMPORTANT: it is necessary to download funx_10.py file from my functions-experiments repository
-For simplicity, put it in the same folder of Draw_tasks_4.py file.
+Two task-switching experiments with digits from 1 to 9 (5 excluded) as stimuli and magnitude & parity as the alternating tasks.  
+The cues is a rectangle that could be either vertical or horizontal: the orientation indicate the task to perform (counterbalanced between pps)
+In each experiment there's a task-irrelevant feature, that is the colour of the cue in experiment 1 and the colour of an external frame in exp. 2.  
+Another variable, manipulated block-wise, is the onset of such task-irrelevant colour: it can either appear with the cue (cue-context onset asynchrony = 0 ms), or with a 300 ms delay (cue-context onset asynchrony = 0 ms). In the latter case the cue (or the frame in exp 2) are black for the first 300 ms.  
+More detailed materials & methods in the manuscript folder.  
+This project build the trial sequences for each blocks. Each counterbalance condition is achieved with a different csv file that will be uploaded in Gorilla.
+
+## [experiment Folder](#experimentFolder)
+IMPORTANT: it is necessary to download `funx_10.py` file from https://github.com/ele-ben/functions-experiments  
+For simplicity, put it in the same folder of `Draw_tasks_4.py` file.
 
 Here we build .csv files containing the information necessary to describe the
 sequence of trials and breaks of an experiment. Specifically, the main script
 generates 16 spreadsheets for experiment 1 and 16 for experiment 2, each representing
-a different counterbalance condition and having differen pseudorandom trials
+a different counterbalance condition and having different pseudorandom trials
 sequence in it.
 
 The experiment folder contains:
@@ -32,19 +45,19 @@ spreadsheetNmes.txt: a list of the spreadsheets names for conveniency
 
 ### Interpret spreadsheets names
 Spreadsheets names are assigned so that they tell the exp (e.g. BRAC1), the
-key-response mapping and the cue-task mapping (e.g. vertAA) and the cocoa (e.g.
+key-response mapping and the cue-task mapping (e.g. vertAA) and the cue-context onset asynchrony (e.g.
 1st300). The cue-task mapping is referred to the magnitude task, and the parity
 mapping follows suit. In "BRAC1_vertAA_1st300", magnitude task is mapped to the
 vertical cue and, consequently, parity to the horizontal. The key-response mapping
 lists first the key for the "great" response (the "less" follows suit) and then
 the key for the "odd" response (the "even", follows suit). In this example, great
 is mapped to A and less to L and odd to A and even to L. "1st300" stands for blocks
-with odd number (1st, 3rd, 5th... blocks) have cocoa 300 and blocks with even
-number have cocoa 0.
+with odd number (1st, 3rd, 5th... blocks) have cue-context onset asynchrony 300 and blocks with even
+number have cue-context onset asynchrony 0.
 
 ## [data Folder](#dataFolder)
 There are raw data and clean data.
-Please note that actual raw data can be dowloaded from Gorilla, whereas the files here are already piled up together to collect the numerous experimental files into 8 files. This operation only consisted in stacking the datasets one below  the other matching coloum names, thus this required to slighlty change some column names when these were renamed by gorilla, but the data are otherwise untouched.
+Please note that actual raw data can be downloaded from Gorilla, whereas the files here are already piled up together to collect the numerous experimental files into 8 files. This operation only consisted in stacking the datasets one below the other matching column names, thus this required to sligthly change some column names when these were renamed by gorilla, but the data are otherwise untouched.
 Raw data files start with "data_exp" since this is Gorilla naming system. Of these files, half are answer to demographics (_questionnaire-) and half the expeirmental data ("_task-"). Besides, data collected from RWTH students are divided from data collected from Prolific, because having different recruitment systems required 2 different experiment trees in Gorilla.
 Legenda of file names:
 
@@ -55,10 +68,16 @@ Legenda of file names:
 
 The remaining 4 files starting with "B" are the clean data:
 B1 stands for BRAC 1, that is context-in cue experiment, and "B2" for BRAC2, context as background, the experiment in which the context is the task-irrelevant frame colour. The data are divided according to participant recruitment method: "_Pro" stands for prolific and "_RWTH" stands for RWTH Aachen University students, recruited via-email. This yields 4 files for the 2 exeperiments.
-These files contain both demographic and experimental info and do not contain participants that were removed because of extremely poor performance or for having participated in both B1 and B2. In B1_RWTH there are many participants with the same counterbalancing condition because of a mistake, but these are all included, since there is no established criterion on how to select them. Similarly participants that may result outliers, but the performance of which is not obviously signalling a really scarce level of attention are included, so that each researcher will be able to decide herself who to include. Criteria for exclusion are visible in the loogbook
+These files contain both demographic and experimental info and do not contain participants that were removed because of extremely poor performance or for having participated in both B1 and B2. In B1_RWTH there are many participants with the same counterbalancing condition because of a mistake, but these are all included, since there is no established criterion on how to select them. Similarly participants that may result outliers are included. Their performance is not obviously signaling a really scarce level of attention, thus we allowed future researchers to freely decide who to include. Criteria for exclusion are visible in the **logbooks**, in one (or more) of the "message" columns ("message", "message1", "message2").  
 
+Participant 5e4a932344498f4e361fee0d had 3 times trial 95 instead of 4 times, as written in the logbook, thus he had 383 instead of 384 trials.
+**It is possible that I have involuntarily deleted that trial**, being the last of the last block. It should be checked with the original data.
 
-[data_bk folder](#data_bkfolder)
+### Logbooks
+a subfolder in the data folder that contains 2 logbooks for exp 1 (prolific participants and RWTH participants) and 2 or exp 2 (prolfic and RWTH).
+In these files, each row is a participants and they are reported demographics info, post-experiment pps' comments, observations derived from checking their raw data and Elena's comments to keep trace of any anomalies.
+
+## [data_bk folder](#data_bkfolder)
 data files names legenda:
 17308-v16 = OLD_BRAC01 - RWTH [- mistake in the counterbalacing, all pps had the same, thus we created a new version for future pps]
 18723-v2 = NEW_BRAC01 - RWTH [all other B1 pps with the remaing 15 counterbalacing conditions]
@@ -67,3 +86,14 @@ data files names legenda:
 18619-v2 or v3 = BRAC02 - Prolific [there are much more versions because the possible counterbalacing were reduced to try to have as many pps ine ach condition]
 (18613-v2 = OLD_BRAC01 - Prolific) [- same mistake in the counterbalacing, thus we created a new version for future pps]
 (18755-v2 = NEW_BRAC01 - Prolific) [there are much more versions, as for 18619]
+
+## [analyses folder](#analyses)
+Contains R scripts for data preprocessing and statistical analyses:  
+- gorilla_preprocessing.R  
+- analysesB1B2.R  
+- comparisonLabOnline.R  &rarr; **This is the script that generates manuscript's results**.  
+
+The last script loads in also lab data and runs analyses on the merged samples.
+
+**These scripts needs the load the `modelsFun.R` script as a source of some custom-made functions.**  
+Script available at: https://github.com/ele-ben/R-custom-functions
