@@ -16,7 +16,7 @@ tabDir = "tables//"
 logbookDir = paste0(dataDir, "logbooks//")
 
 # a .R file with custom functions - define the path to it if different from the working directory
-source("C://Users//Elena//Documents//AA_PhD//Projects//expra2020_faces//modelsFun.R")
+source("C://Users//Elena//Documents//AA_PhD//R//modelsFun.R")
 
 # parameter and theme for graphs
 my_theme <- theme_minimal() + theme(axis.title = element_text(face = "bold"),
@@ -106,7 +106,7 @@ if (B == "B2"| B == "B1B2"){
   # Lab data B2
   
   # change project folder
-  setwd('C://Users//Elena//Documents//AA_PhD//Projects//BRAC01_BRAC02//BRAC02-labVersion')
+  setwd('C://Users//Elena//Documents//AA_PhD//Projects//BRAC01_BRAC02//BRAC1-2-labVersion')
   
   cleanData <- list.files(dataDir, pattern = paste0("B2_lab(.)+.csv"))
   dlab2 <- read.csv2(paste0(dataDir, cleanData), dec = ".")
@@ -118,7 +118,7 @@ if (B == "B2"| B == "B1B2"){
   # dlab2 <- dlab2[dlab2$blockNum < 5,]
   
   # change it back!
-  setwd('C://Users//Elena//Documents//AA_PhD//Projects//BRAC01_BRAC02//BRAC01-FirstOnline')
+  setwd('C://Users//Elena//Documents//AA_PhD//Projects//BRAC01_BRAC02//BRAC1-2-FirstOnline')
   
   # get commong coloumns and bind them in the final dataset
   common_cols <- intersect(names(d2), names(dlab2))
@@ -167,6 +167,16 @@ drt <- drt[!(drt$error == 1 | drt$error_R == 1),]
 
 # dataset cleaing for error analyses
 de <- d[d$task_R != 99 & (d$rt > 200 | is.na(d$rt)),]
+
+# export datasets for machinelearning analyses
+de_means <- group_my(de, error, pp, task_R, correctResp_R, context_R, cocoa, age, sex, version)
+de_means$meanerror <- as.numeric(de_means$meanerror)
+write.csv2(de_means, paste0(dataDir, "error_means.csv"), row.names = F)
+
+write.csv2(de, paste0(dataDir, "error_ML.csv"), row.names = F)
+
+drt_means <- group_my(drt, rt, pp, task_R, correctResp_R, context_R, cocoa, age, sex, version)
+write.csv2(drt_means, paste0(dataDir, "rt_means.csv"), row.names = F)
 
 # Remove outliers -------------------------------------------------------------------------------------------
 # who are the worst ones
@@ -275,22 +285,44 @@ dev.off()
 # one plot where resp relations are merged together
 condtns1 <- group_my(gbl, meanrt, task_R, context_R, cocoa)
 condtns1$cocoa <- factor(condtns1$cocoa,
-                            labels = c("Onset Asynchr. 0 ms", "Onset Asynchr. 300 ms"))
+                            labels = c("0 ms", "300 ms"))
+condtns1 <- rename(condtns1, Asynchrony = cocoa)
 condtns1$context_R <- factor(condtns1$context_R,
-                                 labels = c("Repet.", "Switch"))
+                                 labels = c("Context Repet.", "Context Switch"))
 condtns1$task_R <- factor(condtns1$task_R, 
                           labels = c("Repet.", "Switch"))
 condtns1 <- rename(condtns1, Context = context_R)
 # plot&save
-png(paste0(figDir, B, "_merged_A+B_resp_merged.png"), width = 1300, height = 900, res = 200)
-ggplot(condtns1, aes(x= task_R, y = meanmeanrt, group = Context, colour = Context)) +
+png(paste0(figDir, B, "_merged_A+B_resp_merged_teap.png"), width = 1300, height = 900, res = 200)
+ggplot(condtns1, aes(x= task_R, y = meanmeanrt, group = Asynchrony, colour = Asynchrony)) +
   geom_errorbar(aes(ymin  = meanmeanrt - se, ymax  = meanmeanrt + se), width = 0.3, size  = 0.3, 
                 position = pd, color = "black") +
-  scale_colour_manual(values=c("darkorange", "mediumblue"))+
+  scale_colour_manual(values=c("mediumblue", "darkorange"))+
   geom_line(position = pd) +
-  geom_point(aes(colour = Context), position = pd) +
+  geom_point(aes(colour = Asynchrony), position = pd) +
   my_theme +
-  facet_grid(cols = vars(cocoa))+
+  facet_grid(cols = vars(Context))+
+  ylab("Mean RTs")+
+  xlab("Task")+
+  coord_cartesian(ylim = c(700, 950))
+dev.off()
+
+# one plot for Teap 2021 with task switch costs in the two context relations values only
+condtns1 <- group_my(gbl, meanrt, task_R, context_R)
+condtns1$context_R <- factor(condtns1$context_R,
+                             labels = c("Context Repet.", "Context Switch"))
+condtns1$task_R <- factor(condtns1$task_R, 
+                          labels = c("Repet.", "Switch"))
+condtns1 <- rename(condtns1, Context = context_R)
+# plot&save
+png(paste0(figDir, B, "_merged_A+B_task-sw-cost_teap.png"), width = 1000, height = 900, res = 200)
+ggplot(condtns1, aes(x= task_R, y = meanmeanrt)) +
+  geom_errorbar(aes(ymin  = meanmeanrt - se, ymax  = meanmeanrt + se), width = 0.3, size  = 0.3, 
+                position = pd, color = "black") +
+  geom_line(position = pd) +
+  geom_point() +
+  my_theme +
+  facet_grid(cols = vars(Context))+
   ylab("Mean RTs")+
   xlab("Task")+
   coord_cartesian(ylim = c(700, 950))
@@ -331,6 +363,7 @@ TRC <- group_my(meansXpp, meanrt, task_R, correctResp_R, context_R)
 
 group_my(meansXpp, meanrt, task_R)
 group_my(meansXpp, meanrt, correctResp_R)
+group_my(meansXpp, meanrt, context_R)
 
 
 # task x resp x context
@@ -433,6 +466,13 @@ if (B == "B1B2"){
   write.table(export_aovNice(aov_nice, varsVec), file= paste0(tabDir, B, "_labOnline_err", ".csv"),
               sep = ";", dec = ".", row.names = F)
 }
+
+# Post-hocs errors --------------------------------
+
+group_my(meansXpp, meanerror, task_R)
+group_my(meansXpp, meanerror, correctResp_R)
+group_my(meansXpp, meanerror, context_R)
+group_my(meansXpp, meanerror, cocoa, correctResp_R)
 
 # plot errors --------------------------------------------------------
 
@@ -765,6 +805,8 @@ de$cue.task.rel <- factor(de$cue.task.rel, levels=c("doubleRep", "cueSw", "doubl
 
 cat("Removed ", 1 - nrow(de)/nrow(d), " of the initial dataset. \n")
 
+# old anovas
+
 meansxpp <- as.data.frame(group_my(de, error, pp, cue.task.rel, exp))
 
 aov_nice <- aov_ez("pp", "meanerror", meansxpp, within=c("cue.task.rel"), between = "exp",
@@ -824,7 +866,7 @@ meansxppr <- as.data.frame(group_my(de, error, pp, cue.task.rel, correctResp_R, 
 aov_nice <- aov_ez("pp", "meanerror", meansxppr, within=c("cue.task.rel", "correctResp_R", "cocoa"),
                    return="nice", anova_table = list(es = "pes"))
 
-varsVec <- c("trial type", "resp", "cocoa")
+varsVec <- c("trialType", "resp", "cocoa")
 write.table(export_aovNice(aov_nice, varsVec), file= paste0(tabDir, B, "_2CT_analyses_err", ".csv"),
             sep = ";", dec = ".", row.names = F)
 
@@ -850,7 +892,29 @@ ggplot(condtns3, aes(x= cue.task.rel, y = meanmeanerror, group = Response, colou
   facet_grid(cols = vars(cocoa))
 dev.off()
 
+#post-hocs
 
+for (l in c(levels(de$cue.task.rel))){for (r in c(0, 1)){for (c in c(0, 300)){
+  nam <- paste0(l, "_r", r, "_c", c)
+  assign(nam, meansxppr[meansxppr$cue.task.rel == l & meansxppr$correctResp_R == r &
+                          meansxppr$cocoa == c, "meanerror"])
+  print(nam)
+}}}
+
+postHocLst <- list(
+  "in resp rep, cocoa 0, cueSw - doubleRep" =
+    t.test(cueSw_r0_c0, doubleRep_r0_c0, var.equal = T, paired = T, alternative = "l"),
+  "in resp sw, cocoa 0, cueSw - doubleRep" =
+    t.test(cueSw_r1_c0, doubleRep_r1_c0, var.equal = T, paired = T, alternative = "g"),
+  "in resp rep, cocoa 300, cueSw - doubleRep" =
+    t.test(cueSw_r0_c300, doubleRep_r0_c300, var.equal = T, paired = T, alternative = "g"),
+  "in resp sw, cocoa 300, cueSw - doubleRep" =
+    t.test(cueSw_r1_c300, doubleRep_r1_c300, var.equal = T, paired = T, alternative = "l")
+)
+
+postHoc.output(postHocLst)
+
+# old post-hocs
 #meansxpp1 <- meansxpp[meansxpp$exp == "B2",]
 meansxpp1 <- as.data.frame(group_my(meansxpp, meanerror, pp, cue.task.rel))
 
