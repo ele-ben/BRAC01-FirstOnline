@@ -12,7 +12,7 @@ Ptyhon
 - [Introduction](#Introduction)
 - [experiment Folder](#experimentFolder)
 - [data Folder](#dataFolder)
-- [data_bk folder](#data_bkfolder)
+- [data_raw folder](#data_bkfolder)
 - [analyses folder](#analyses)
 
 ## [Introduction](#Introduction)  
@@ -61,17 +61,9 @@ with odd number (1st, 3rd, 5th... blocks) have cue-context onset asynchrony 300 
 number have cue-context onset asynchrony 0.
 
 ## [data Folder](#dataFolder)
-There are raw data and clean data.
-Please note that actual raw data can be downloaded from Gorilla, whereas the files here are already piled up together to collect the numerous experimental files into 8 files. This operation only consisted in stacking the datasets one below the other matching column names, thus this required to sligthly change some column names when these were renamed by gorilla, but the data are otherwise untouched.
-Raw data files start with "data_exp" since this is Gorilla naming system. Of these files, half are answer to demographics (_questionnaire-) and half the expeirmental data ("_task-"). Besides, data collected from RWTH students are divided from data collected from Prolific, because having different recruitment systems required 2 different experiment trees in Gorilla.
-Legenda of file names:
+There are raw data (in the respective subfolder) and clean data.
 
-- data_exp__RWTH_OldNew = BRAC1, RWTH students
-- data_exp_17326_PlusMara = BRAC2, RWTH students
-- data_exp_18755_75pps = BRAC1, Prolific pps
-- data_exp_18619_72pps = BRAC2, Prolific pps
-
-The remaining 4 files starting with "B" are the clean data:
+The 4 files starting with "B" are the clean data:
 B1 stands for BRAC 1, that is context-in cue experiment, and "B2" for BRAC2, context as background, the experiment in which the context is the task-irrelevant frame colour. The data are divided according to participant recruitment method: "_Pro" stands for prolific and "_RWTH" stands for RWTH Aachen University students, recruited via-email. This yields 4 files for the 2 exeperiments.
 These files contain both demographic and experimental info and do not contain participants that were removed because of extremely poor performance or for having participated in both B1 and B2. In B1_RWTH there are many participants with the same counterbalancing condition because of a mistake, but these are all included, since there is no established criterion on how to select them. Similarly participants that may result outliers are included. Their performance is not obviously signaling a really scarce level of attention, thus we allowed future researchers to freely decide who to include. Criteria for exclusion are visible in the **logbooks**, in one (or more) of the "message" columns ("message", "message1", "message2").  
 
@@ -82,15 +74,28 @@ Participant 5e4a932344498f4e361fee0d had 3 times trial 95 instead of 4 times, as
 a subfolder in the data folder that contains 2 logbooks for exp 1 (prolific participants and RWTH participants) and 2 or exp 2 (prolfic and RWTH).
 In these files, each row is a participants and they are reported demographics info, post-experiment pps' comments, observations derived from checking their raw data and Elena's comments to keep trace of any anomalies.
 
-## [data_bk folder](#data_bkfolder)
-data files names legenda:
-17308-v16 = OLD_BRAC01 - RWTH [- mistake in the counterbalacing, all pps had the same, thus we created a new version for future pps]
-18723-v2 = NEW_BRAC01 - RWTH [all other B1 pps with the remaing 15 counterbalacing conditions]
-17326-v8 = BRAC02 - RWTH - [one participant, we realised the same counterbalancing mistake on time]
-17326-v13 = BRAC02 - RWTH [all other B2 pps with the remaing 15 counterbalacing conditions]
-18619-v2 or v3 = BRAC02 - Prolific [there are much more versions because the possible counterbalacing were reduced to try to have as many pps ine ach condition]
-(18613-v2 = OLD_BRAC01 - Prolific) [- same mistake in the counterbalacing, thus we created a new version for future pps]
-(18755-v2 = NEW_BRAC01 - Prolific) [there are much more versions, as for 18619]
+## [data_raw folder](#data_bkfolder)
+
+Data files names legenda (original zip data files downloaded from Gorilla):  
+B1:  
+- data_exp_18613-v2 exp B1 Prolifc pps [mistake in the counterbalacing, all pps had the same, thus we created a new version for future pps]
+- data_exp_18755 from v2 to v6 exp B1 Prolific pps. [with the remaining 15 counterbalance conditions assigned eqaully to pps]  
+- data_exp_17308-v16 B1, RWTH pps [same mistake in the counterbalance node, all 10 pps same condition]  
+- data_exp_18723-v2, RWTH pps with counterbalance adjusted
+B2:  
+- data_exp_18619 from v2 to v6 exp. B2 Prolific pps  
+- data_exp_17326 v8 and v13 B2 RWTH pps &rarr; 2 more pps took part unbeknowst to me and are present in this zip file, but not in the clean nor the logbook  
+
+Raw data already piled up in single files:
+
+The files here are already piled up together to collect the numerous experimental files into 8 files. This operation only consisted in stacking the datasets one below the other matching column names, thus this required to slightly change some column names when these were renamed by gorilla, but the data are otherwise untouched. **It is possible, however, that here is where I removed that participant final line by error**
+Raw data files start with "data_exp" since this is Gorilla naming system. Of these files, half are answer to demographics (_questionnaire-) and half the experimental data ("_task-"). Besides, data collected from RWTH students are divided from data collected from Prolific, because having different recruitment systems required 2 different experiment trees in Gorilla.
+Legenda of file names:
+
+- data_exp__RWTH_OldNew = BRAC1, RWTH students
+- data_exp_17326_PlusMara = BRAC2, RWTH students
+- data_exp_18755_75pps = BRAC1, Prolific pps
+- data_exp_18619_72pps = BRAC2, Prolific pps
 
 ## [analyses folder](#analyses)
 Contains R scripts for data preprocessing and statistical analyses:  
